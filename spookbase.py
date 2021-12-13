@@ -2,8 +2,6 @@
 @author: congzlwag
 """
 import numpy as np
-import scipy.sparse as sps
-from scipy.sparse.linalg import spsolve
 # import osqp
 
 class SpookBase:
@@ -48,43 +46,51 @@ class SpookBase:
                 B_is_dict = True
             else:
                 raise TypeError("type(B) can only be either dict or array") 
-            Ng = 1 if G is None else G.shape[1]
-            assert Ns == B.shape[0] and (G is None or Nb == G.shape[0])
-            # Which to contract first? Nb or Ns?
-            if Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb):
-                if G is not None:
-                    if B_is_dict:
-                        GtB = {}
-                        for ky,b in B.items:
-                            GtB[ky] = b @ G
-                    else:
-                        GtB = B @ G
+            assert Ns == (len(B))
+            Ng = Nb if G is None else G.shape[1]
+            assert (G is None or Nb == G.shape[0])
+            # Simply precontract over Ns When G is None
+            # But otherwise one need to ponder on the ordering
+            # of Ns vs Nb contraction
+            if Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb) and G is not None:
                 if B_is_dict:
-                    self._Bcontracted = dict_innerprod(A, GtB)
+                    GtB = {}
+                    for ky,b in B.items():
+                        GtB[ky] = b @ G
                 else:
-                    self._Bcontracted = A.T @ GtB
+                    GtB = B @ G
+                B = GtB
+            if B_is_dict:
+                self._Bcontracted = dict_innerprod(A, B)
             else:
-                if B_is_dict:
-                    B = dict_innerprod(A, B)
-                else:
-                    B = A.T @ B
-                if G is not None:
-                    B = B @ G
-                self._Bcontracted = B
+                self._Bcontracted = A.T @ B
+            if not (Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb)) and G is not None:
+                self._Bcontracted = self._Bcontracted @ G
             self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
             self._GtG = None if G is None else G.T @ G
 
     def getShape(self):
-        ret = {"Na": self._AtA.shape[0], "Ng":1 if self._GtG is None else self._GtG.shape[1]}
+        ret = {"Na": self._AtA.shape[0], "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
         if self._GtG is None:
-            ret['Nb'] = self._GtG.shape[1]
+            ret['Nb'] = ret['Ng']
         return ret
 
     def solve(self):
-        pass
+        """
+        Just for the base class
+        Redefine for every derived class
+        """
+        tmp = np.linalg.solve(self._AtA, self._Bcontracted)
+        if self._GtG is None:
+            self.res = tmp
+        else:
+            self.res = np.linalg.solve(self._GtG, tmp.T).T
 
     def getXopt(self):
-        pass
+        Na = self._AtA.shape[0]
+        if not hasattr(self, 'res'):
+            self.solve()
+        return self.res.reshape((Na, -1))
 
 def dict_innerprod(dictA, dictB):
     """
@@ -93,65 +99,70 @@ def dict_innerprod(dictA, dictB):
     """
     lsta, keys = (list(dictA.keys()), list(dictB.keys()))
     assert np.setdiff1d(keys, lsta).size == 0, "Keys mismatch."
-    keys.sorted()
+    keys.sort()
+
     try:
         B = np.empty((len(keys), dictB[keys[0]].size))
         for j, k in enumerate(keys):
             B[j,:] = dictB[k].flatten()
-        A = np.vstack([dictA[k] for k in tqdm(keys)])
+        A = np.vstack([dictA[k] for k in keys])
         res = A.T @ B
     except MemoryError:
         # print("Chunk accumulating")
         res = 0
         chunk_size = 1000
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
-        for ky_seg in tqdm(key_segments):
+        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
+        for ky_seg in tqdm(key_segs):
             A = np.vstack([dictA[k] for k in (ky_seg)])
             B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
             res += A.T @ B
     return res
 
 
-def laplacian1D_S(N):
-    Lmat = sps.eye(N)*(-2)
-    if N > 1:
-        b = np.ones(N-1)
-        Lmat += sps.diags(b, offsets=1) + sps.diags(b, offsets=-1)
-    return Lmat
 
-def iso_struct(csc_mata, csc_matb):
-    """Determine whether two csc sparse matrices share the same structure
-    """
-    if csc_mata.shape != csc_matb.shape:
-        return False
-    res = (csc_mata.indices == csc_matb.indices).all() 
-    res = res and (csc_mata.indptr == csc_matb.indptr).all()
-    return res
+if __name__ == '__main__':
+    np.random.seed(1996)
+    Ardm = np.random.randn(1000,30)
+    Xtrue = np.random.randn(30,10)
+    G = np.random.rand(20,10)
+    B0 = Ardm @ Xtrue
+    B1 = B0 @ (G.T)
 
-def normalizedATA(A):
-    """
-    This will normalize A (not in situ normalization) such that
-    sum(A_{ij}^2)/N_A = 1
-    i.e. pixel-averaged but shot-accumulated A^2 is 1
-    """
-    AtA = (A.T) @ A
-    scaleA = (np.trace(AtA) / (A.shape[1]))**0.5 # px-wise mean-square
-    AtA /= (scaleA**2)
-    return AtA, scaleA
+    spkraw0 = SpookBase(B0, Ardm)
+    spkraw1 = SpookBase(B1, Ardm, G=G)
 
-def normalizedB(B):
-    """
-    This will normalize B (not in situ normalization) such that
-    sum(B_{ij}^2)/N_B = 1
-    i.e. pixel-averaged but shot-accumulated B^2 is 1
-    """
-    scaleB = np.linalg.norm(B,"fro") / (B.shape[1]**0.5)
-    return B/scaleB, scaleB
+    X0 = spkraw0.getXopt()
+    X1 = spkraw1.getXopt()
 
-def comboNormalize(A, B, return_scalefactors=False):
-    AtA, scaleA = normalizedATA(A)
-    tmp, scaleB = normalizedB(B)
-    AtB = (A/scaleA).T @ tmp
-    if return_scalefactors:
-        return AtA, AtB, scaleA, scaleB
-    return AtA, AtB
+    # print(np.allclose(Xtrue, X0), np.allclose(Xtrue, X1))
+
+    # AtA = Ardm.T @ Ardm
+    # spkctr0 = SpookBase(Ardm.T @ B0, AtA, "contracted")
+    # spkctr1 = SpookBase(Ardm.T @ B1 @ G, AtA, "contracted", G=G.T @ G)
+    # X0 = spkctr0.getXopt()
+    # X1 = spkctr1.getXopt()
+    # print(np.allclose(Xtrue, X0), np.allclose(Xtrue, X1))
+
+    # A_dict = {}
+    # B0_dict = {}
+    # B1_dict = {}
+    # for j, a in enumerate(Ardm):
+    #     A_dict[j] = a 
+    #     B0_dict[j] = B0[j]
+    #     B1_dict[j] = B1[j]
+
+    # spk0 = SpookBase(B0_dict, A_dict, "raw")
+    # Xd0 = spk0.getXopt()
+    # spk1 = SpookBase(B1_dict, A_dict, "raw", G)
+    # Xd1 = spk1.getXopt()
+
+    # print(np.allclose(Xtrue, Xd0), np.allclose(Xtrue, Xd1))
+
+    shape_dct = spkraw1.getShape()
+    Na = shape_dct['Na']
+    Ns = Ardm.shape[0]
+    Nb = B1.shape[1]
+    Ng = shape_dct["Ng"]
+    print(Na, Ns, Nb, Ng)
+    print(Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb))
