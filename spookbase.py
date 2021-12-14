@@ -13,7 +13,7 @@ class SpookBase:
     B is a <=2d data (#shot, Nb)
     G is an optional operator on the dimension Nb
     """
-    def __init__(self, B, A, mode="raw", G=None):
+    def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None):
         """
         :param mode: "raw" or "contracted"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
@@ -69,8 +69,12 @@ class SpookBase:
             self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
             self._GtG = None if G is None else G.T @ G
 
+        self.lsparse = lsparse
+        self.lsmooth = lsmooth
+        self.__Na = self._AtA.shape[0]
+
     def getShape(self):
-        ret = {"Na": self._AtA.shape[0], "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
+        ret = {"Na": self.__Na, "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
         if self._GtG is None:
             ret['Nb'] = ret['Ng']
         return ret
@@ -87,10 +91,24 @@ class SpookBase:
             self.res = np.linalg.solve(self._GtG, tmp.T).T
 
     def getXopt(self):
-        Na = self._AtA.shape[0]
         if not hasattr(self, 'res'):
             self.solve()
-        return self.res.reshape((Na, -1))
+        return self.res.reshape((self.__Na, -1))
+
+    def update_lsparse(self, lsparse):
+        """ To be redefined in each derived class
+        """
+        self.lsparse = lsparse
+
+    def update_lsmooth(self, lsmooth):
+        self.lsmooth = lsmooth
+
+    def _updateHyperParams(self, lsparse, lsmooth):
+        if lsparse is not None and lsparse != self.lsparse:
+            self.update_lsparse(lsparse)
+        if lsmooth is not None and lsmooth != self.lsmooth:
+            self.update_lsmooth(lsmooth)
+
 
 def dict_innerprod(dictA, dictB):
     """
