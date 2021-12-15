@@ -2,6 +2,9 @@
 @author: congzlwag
 """
 import numpy as np
+from .utils import worth_sparsify
+from scipy.sparse import coo_matrix
+from scipy.sparse.linalg import spsolve
 # import osqp
 
 class SpookBase:
@@ -71,29 +74,37 @@ class SpookBase:
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
-        self.__Na = self._AtA.shape[0]
+        self._Na = self._AtA.shape[0]
+        if self._GtG is not None and worth_sparsify(self._GtG):
+            self._GtG = coo_matrix(self._GtG)
 
     def getShape(self):
-        ret = {"Na": self.__Na, "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
+        ret = {"Na": self._Na, "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
         if self._GtG is None:
             ret['Nb'] = ret['Ng']
         return ret
 
-    def solve(self):
+    def solve(self, lsparse=None, lsmooth=None):
         """
         Just for the base class
         Redefine for every derived class
         """
+        self._updateHyperParams(lsparse, lsmooth)
         tmp = np.linalg.solve(self._AtA, self._Bcontracted)
         if self._GtG is None:
             self.res = tmp
         else:
-            self.res = np.linalg.solve(self._GtG, tmp.T).T
+            if isinstance(self._GtG, np.ndarray):
+                self.res = np.linalg.solve(self._GtG, tmp.T).T
+            else:
+                self.res = spsolve(self._GtG.tocsc(), tmp.T).T
 
-    def getXopt(self):
-        if not hasattr(self, 'res'):
-            self.solve()
-        return self.res.reshape((self.__Na, -1))
+    def getXopt(self, lsparse=None, lsmooth=None):
+        updated = self._updateHyperParams(lsparse, lsmooth)
+        if updated or not hasattr(self,'res'):
+            print("Updated")
+            self.solve(None, None)
+        return self.res.reshape((self._Na, -1))
 
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
@@ -104,10 +115,15 @@ class SpookBase:
         self.lsmooth = lsmooth
 
     def _updateHyperParams(self, lsparse, lsmooth):
+        # print("updating")
+        ret = False
         if lsparse is not None and lsparse != self.lsparse:
             self.update_lsparse(lsparse)
+            ret = True
         if lsmooth is not None and lsmooth != self.lsmooth:
             self.update_lsmooth(lsmooth)
+            ret = True
+        return ret
 
 
 def dict_innerprod(dictA, dictB):
