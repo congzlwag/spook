@@ -8,11 +8,19 @@ def laplacian1D_S(N):
         Lmat += sps.diags(b, offsets=1) + sps.diags(b, offsets=-1)
     return Lmat
 
+def laplacian_square_S(N, drop_bound):
+    L = laplacian1D_S(N)
+    if drop_bound:
+        if N < 3:
+            return 0
+        L = L[1:-1]
+    return L.T @ L
+
 def worth_sparsify(arr):
-	if isinstance(arr, np.ndarray):
-		return 3*(arr!=0).sum() < arr.size 
-	elif isinstance(arr, sps.spmatrix):
-		return 3*arr.nnz < np.prod(arr.shape)
+    if isinstance(arr, np.ndarray):
+        return 3*(arr!=0).sum() < arr.size 
+    elif isinstance(arr, sps.spmatrix):
+        return 3*arr.nnz < np.prod(arr.shape)
 
 def iso_struct(csc_mata, csc_matb):
     """Determine whether two csc sparse matrices share the same structure

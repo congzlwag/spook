@@ -16,6 +16,7 @@ class SpookBase:
     B is a <=2d data (#shot, Nb)
     G is an optional operator on the dimension Nb
     """
+    smoothness_drop_boundaries = True
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None):
         """
         :param mode: "raw" or "contracted"

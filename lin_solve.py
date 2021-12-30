@@ -2,7 +2,7 @@ import scipy.sparse as sps
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from .base import SpookBase
-from .utils import laplacian1D_S, worth_sparsify
+from .utils import laplacian_square_S, worth_sparsify
 
 class SpookLinSolve(SpookBase):
     """
@@ -15,10 +15,11 @@ class SpookLinSolve(SpookBase):
         Bsmoother="laplacian"):
         SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth)
         self._Ng = self.getShape()['Ng']
-        L = laplacian1D_S(self._Na)
-        self._La2 = L @ L
-        self._Bsm = laplacian1D_S(self._Ng) if (isinstance(Bsmoother, str) and Bsmoother == "laplacian") else Bsmoother
-        
+        # L = laplacian1D_S(self._Na)
+        self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
+        self._Bsm = Bsmoother
+        if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
+            self._Bsm = laplacian_square_S(self._Ng)
         self.setupProb()
 
     def setupProb(self):
