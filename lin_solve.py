@@ -19,7 +19,7 @@ class SpookLinSolve(SpookBase):
         self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
         self._Bsm = Bsmoother
         if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
-            self._Bsm = laplacian_square_S(self._Ng)
+            self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
         self.setupProb()
 
     def setupProb(self):
