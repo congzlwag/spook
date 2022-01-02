@@ -4,7 +4,7 @@
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
 from .utils import dict_innerprod
-from scipy.sparse import coo_matrix
+import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
 
 class SpookBase:
@@ -78,7 +78,7 @@ class SpookBase:
         self.lsmooth = lsmooth
         # self._Na = self._AtA.shape[0]
         if self._GtG is not None and worth_sparsify(self._GtG):
-            self._GtG = coo_matrix(self._GtG)
+            self._GtG = sps.coo_matrix(self._GtG)
         self._La2 = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
         self._Bsm = Bsmoother
         if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
@@ -118,7 +118,7 @@ class SpookBase:
 
     def getXopt(self, lsparse=None, lsmooth=None):
         updated = self._updateHyperParams(lsparse, lsmooth)
-        if updated: print("Updated")
+        if updated and self.verbose: print("Updated")
         if updated or not hasattr(self,'res'):
             self.solve(None, None)
         return self.res.reshape((self.Na, -1))
