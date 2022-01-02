@@ -1,3 +1,4 @@
 from spook.base import SpookBase
 from spook.lin_solve import SpookLinSolve
+from spook.quad_program import SpookPosL1
 import spook.utils as utils
