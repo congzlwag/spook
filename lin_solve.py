@@ -13,13 +13,13 @@ class SpookLinSolve(SpookBase):
     """
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
         Bsmoother="laplacian"):
-        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth)
-        self._Ng = self.getShape()['Ng']
+        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother)
+        # self._Ng = self.shape['Ng']
         # L = laplacian1D_S(self._Na)
-        self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
-        self._Bsm = Bsmoother
-        if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
-            self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
+        # self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
+        # self._Bsm = Bsmoother
+        # if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
+        #     self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
         self.setupProb()
 
     def setupProb(self):
@@ -33,21 +33,20 @@ class SpookLinSolve(SpookBase):
         # print("Set up a vectorized problem")
         assert self._GtG is None and self.lsmooth[1]==0
         self.qhalf = self._Bcontracted
-        self.P = self.lsparse * sps.eye(self._Na) + self.lsmooth[0] * self._La2
+        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2
         self.P += self._AtA
 
     def __setupProbFlat(self):
         # print("Set up a flattened problem")
         self.qhalf = self._Bcontracted.ravel()
-        self.P = self.lsparse * sps.eye(self._Na) + self.lsmooth[0] * self._La2 
-        self.P = sps.kron(self.P, sps.eye(self._Ng))
+        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2 
+        self.P = sps.kron(self.P, sps.eye(self.Ng))
         if hasattr(self,'_AGtAG'):
             self.P += self._AGtAG
         else:
-            GtG = sps.eye(self._Ng) if self._GtG is None else self._GtG
-            self._AGtAG = np.kron(self._AtA, GtG) if isinstance(GtG, np.ndarray) else sps.kron(self._AtA, GtG)
+            self._AGtAG = self.AGtAG # save to avoid recalculating the tensor product
             self.P += self._AGtAG
-        self.P += sps.kron(sps.eye(self._Na), self.lsmooth[1]*self._Bsm)
+        self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
 
     def update_lsparse(self, lsparse):
         # Updating lsparse won't change need_to_flatten

@@ -22,8 +22,36 @@ def worth_sparsify(arr):
     elif isinstance(arr, sps.spmatrix):
         return 3*arr.nnz < np.prod(arr.shape)
 
+def dict_innerprod(dictA, dictB):
+    """
+    Inner product of two tensors represented as dictionaries, 
+    with the contracted dimension being the keys.
+    """
+    lsta, keys = (list(dictA.keys()), list(dictB.keys()))
+    assert np.setdiff1d(keys, lsta).size == 0, "Keys mismatch."
+    keys.sort()
+
+    try:
+        B = np.empty((len(keys), dictB[keys[0]].size))
+        for j, k in enumerate(keys):
+            B[j,:] = dictB[k].flatten()
+        A = np.vstack([dictA[k] for k in keys])
+        res = A.T @ B
+    except MemoryError:
+        # print("Chunk accumulating")
+        res = 0
+        chunk_size = 1000
+        key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
+        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
+        for ky_seg in tqdm(key_segs):
+            A = np.vstack([dictA[k] for k in (ky_seg)])
+            B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
+            res += A.T @ B
+    return res
+
 def iso_struct(csc_mata, csc_matb):
-    """Determine whether two csc sparse matrices share the same structure
+    """
+    Determine whether two csc sparse matrices share the same structure
     """
     if csc_mata.shape != csc_matb.shape:
         return False
