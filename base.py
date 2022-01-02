@@ -2,10 +2,10 @@
 @author: congzlwag
 """
 import numpy as np
-from .utils import worth_sparsify
+from .utils import worth_sparsify, laplacian_square_S
+from .utils import dict_innerprod
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg import spsolve
-# import osqp
 
 class SpookBase:
     """
@@ -17,7 +17,8 @@ class SpookBase:
     G is an optional operator on the dimension Nb
     """
     smoothness_drop_boundaries = True
-    def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None):
+    def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
+        Bsmoother="laplacian"):
         """
         :param mode: "raw" or "contracted"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
@@ -75,15 +76,30 @@ class SpookBase:
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
-        self._Na = self._AtA.shape[0]
+        # self._Na = self._AtA.shape[0]
         if self._GtG is not None and worth_sparsify(self._GtG):
             self._GtG = coo_matrix(self._GtG)
+        self._La2 = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
+        self._Bsm = Bsmoother
+        if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
+            self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
 
-    def getShape(self):
-        ret = {"Na": self._Na, "Ng":self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
+    @property
+    def Na(self):
+        return self._AtA.shape[0]
+
+    @property
+    def Ng(self):
         if self._GtG is None:
-            ret['Nb'] = ret['Ng']
-        return ret
+            return self._Bcontracted.shape[1] 
+        return self._GtG.shape[1]
+
+    # @property
+    # def shape(self):
+    #     ret = {"Na": self._Na, "Ng": self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
+    #     if self._GtG is None:
+    #         ret['Nb'] = ret['Ng']
+    #     return ret
 
     def solve(self, lsparse=None, lsmooth=None):
         """
@@ -102,10 +118,10 @@ class SpookBase:
 
     def getXopt(self, lsparse=None, lsmooth=None):
         updated = self._updateHyperParams(lsparse, lsmooth)
+        if updated: print("Updated")
         if updated or not hasattr(self,'res'):
-            print("Updated")
             self.solve(None, None)
-        return self.res.reshape((self._Na, -1))
+        return self.res.reshape((self.Na, -1))
 
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
@@ -126,34 +142,20 @@ class SpookBase:
             ret = True
         return ret
 
-
-def dict_innerprod(dictA, dictB):
-    """
-    Inner product of two tensors represented as dictionaries, 
-    with the contracted dimension being the keys.
-    """
-    lsta, keys = (list(dictA.keys()), list(dictB.keys()))
-    assert np.setdiff1d(keys, lsta).size == 0, "Keys mismatch."
-    keys.sort()
-
-    try:
-        B = np.empty((len(keys), dictB[keys[0]].size))
-        for j, k in enumerate(keys):
-            B[j,:] = dictB[k].flatten()
-        A = np.vstack([dictA[k] for k in keys])
-        res = A.T @ B
-    except MemoryError:
-        # print("Chunk accumulating")
-        res = 0
-        chunk_size = 1000
-        key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
-        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
-        for ky_seg in tqdm(key_segs):
-            A = np.vstack([dictA[k] for k in (ky_seg)])
-            B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
-            res += A.T @ B
-    return res
-
+    @property
+    def AGtAG(self):
+        """
+        Tensor product of AtA and GtG
+        Some children classes need this tensor itself, 
+        some need its upper triangular part only,
+        so I make it a non-cache property
+        A child class can cache it/its upper triangular part if necessary
+        """
+        GtG = sps.eye(self.Ng) if self._GtG is None else self._GtG
+        if isinstance(GtG, np.ndarray):
+            return np.kron(self._AtA, GtG)
+        else:
+            return sps.kron(self._AtA, GtG)
 
 
 if __name__ == '__main__':
@@ -194,7 +196,7 @@ if __name__ == '__main__':
 
     # print(np.allclose(Xtrue, Xd0), np.allclose(Xtrue, Xd1))
 
-    shape_dct = spkraw1.getShape()
+    shape_dct = spkraw1.shape
     Na = shape_dct['Na']
     Ns = Ardm.shape[0]
     Nb = B1.shape[1]
