@@ -11,6 +11,7 @@ class SpookLinSolve(SpookBase):
     no positivity constraint 
     L2 sparsity
     """
+    verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
         Bsmoother="laplacian"):
         SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother)
@@ -62,7 +63,7 @@ class SpookLinSolve(SpookBase):
 
     def solve(self, lsparse=None, lsmooth=None):
         self._updateHyperParams(lsparse, lsmooth)
-        print("Solving Lin. Eq.")
+        if self.verbose: print("Solving Lin. Eq.")
         if isinstance(self.P, np.ndarray):
             self.res = np.linalg.solve(self.P, self.qhalf)
         else:
