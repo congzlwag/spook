@@ -13,7 +13,7 @@ def laplacian_square_S(N, drop_bound):
     if drop_bound:
         if N < 3:
             return 0
-        L = L[1:-1]
+        L = (L.tocsc())[1:-1]
     return L.T @ L
 
 def worth_sparsify(arr):

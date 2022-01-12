@@ -13,8 +13,9 @@ class SpookLinSolve(SpookBase):
     """
     verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
-        Bsmoother="laplacian"):
-        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother)
+        Bsmoother="laplacian", **kwargs):
+        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, 
+            Bsmoother=Bsmoother, **kwargs)
         # self._Ng = self.shape['Ng']
         # L = laplacian1D_S(self._Na)
         # self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)

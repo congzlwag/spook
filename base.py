@@ -18,10 +18,12 @@ class SpookBase:
     """
     smoothness_drop_boundaries = True
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
-        Bsmoother="laplacian"):
+        Bsmoother="laplacian", pre_normalize=True):
         """
         :param mode: "raw" or "contracted"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
+        :param Bsmoother: the quadratic matrix for smoothness
+        :param pre_normalize: whether or not to normalize ATA, GTG
         """
         if not (mode in ['raw', 'contracted']):
             raise ValueError("Unknown mode: %s. Must be either 'raw' or 'contracted'"%mode)
@@ -84,6 +86,8 @@ class SpookBase:
         if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
             self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
 
+        self.normalizeAG(pre_normalize)
+
     @property
     def Na(self):
         return self._AtA.shape[0]
@@ -121,7 +125,9 @@ class SpookBase:
         if updated and self.verbose: print("Updated")
         if updated or not hasattr(self,'res'):
             self.solve(None, None)
-        return self.res.reshape((self.Na, -1))
+        Xo = self.res.reshape((self.Na, -1)) 
+        Xo /= (self.__Ascale*self.__Gscale)
+        return Xo
 
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
@@ -141,6 +147,24 @@ class SpookBase:
             self.update_lsmooth(lsmooth)
             ret = True
         return ret
+
+    def normalizeAG(self, pre_normalize):
+        if not pre_normalize:
+            self.__Ascale, self.__Gscale = (1,1)
+        else:
+            scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
+            self._AtA /= scaleA2
+            self.__Ascale = scaleA2**0.5
+            if self._GtG is None:
+                scaleG2 = 1
+            else:
+                if isinstance(self._GtG, np.ndarray):
+                    scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
+                else:
+                    scaleG2 = self._GtG.diagonal().mean()
+                self._GtG /= scaleG2
+            self.__Gscale = scaleG2**0.5
+            self._Bcontracted /= (self.__Ascale*self.__Gscale)
 
     @property
     def AGtAG(self):

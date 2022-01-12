@@ -43,9 +43,9 @@ class SpookPosL1(SpookQPBase):
     """
     verbose = False
     def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1), 
-        Bsmoother="laplacian"):
+        Bsmoother="laplacian", **kwargs):
         SpookBase.__init__(self, B, A, mode=mode, G=G, 
-            lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother)
+            lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother, **kwargs)
         
         self.__Pcore = sps.triu(self.AGtAG, 0, "csc")
         self._qhalf = - self._Bcontracted.ravel()
