@@ -63,7 +63,7 @@ class SpookBase:
                 if B_is_dict:
                     GtB = {}
                     for ky,b in B.items():
-                        GtB[ky] = b @ G
+                        GtB[ky] = b.ravel() @ G
                 else:
                     GtB = B @ G
                 B = GtB

@@ -48,3 +48,4 @@ X0 = spk0.getXopt(0.1, (1e-4,1e-4))
 fig = plt.figure()
 plt.pcolormesh(X0)
 plt.colorbar()
+
