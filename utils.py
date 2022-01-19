@@ -43,7 +43,7 @@ def dict_innerprod(dictA, dictB):
         chunk_size = 1000
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
         key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
-        for ky_seg in tqdm(key_segs):
+        for ky_seg in key_segs:
             A = np.vstack([dictA[k] for k in (ky_seg)])
             B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
             res += A.T @ B
