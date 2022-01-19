@@ -86,3 +86,4 @@ def comboNormalize(A, B, return_scalefactors=False):
     if return_scalefactors:
         return AtA, AtB, scaleA, scaleB
     return AtA, AtB
+
