@@ -14,7 +14,7 @@ class PhotonFreqResVMI:
 			dat = precontractedData
 			bounds = dat['vlse_2bounds']
 			AtA = dat['AtA']
-			AtQuad = dat['AtQuad'][bounds[0]:bounds[1]]
+			AtQuad = dat['AtQuad']
 			A = dat['A']
 		else:
 			print("#Photon spectra:", len(vls_spec_dict.keys()), ". #VMI images", len(processed_quad_images_dict.keys()))
@@ -31,7 +31,7 @@ class PhotonFreqResVMI:
 			np.savez_compressed(npz_fname, A=A, BIDs=BIDs, AtA=AtA, AtQuad=AtQuad, vlse_2bounds=bounds)
 		
 		AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
-		AtQuad = AtQuad[bounds[0]:bounds[1], bounds[0]:bounds[1]]
+		AtQuad = AtQuad[bounds[0]:bounds[1]]
 
 		if pxWeights is None:
 			GtG = gData['V'] @ np.diag(gData['S']**2) @ gData['V'].T
@@ -58,8 +58,8 @@ class PhotonFreqResVMI:
 		Xo = self.__spook.getXopt(**spook_kwargs)
 		gData = self.__gData
 		Xo_wlk = Xo.reshape(Xo.shape[0], gData['nl'], -1)
-		ret = gData['x'][:,None] * (Xo_wlk @ gData['frk'].T).transpose((2,0,1))
-		self.Xo_Ewl = ((0.5/self._alpha) * gData['x'][:,None]) * ret
+		ret = (Xo_wlk @ gData['frk'].T).transpose((2,0,1))
+		self.Xo_Ewl = ((0.5/self._alpha) * gData['x'][:,None,None]) * ret
 		if l is not None:
 			return self.Xo_Ewl[:,l//2]
 		return self.Xo_Ewl
@@ -70,5 +70,7 @@ class PhotonFreqResVMI:
 		gData = self.__gData
 		ax.pcolormesh(self._alpha*(gData['x']**2), self.__vlsAxisInPX,
 			self.Xo_Ewl[:,:,l//2].T, shading='nearest')
+		ax.set_ylabel("VLS pixel")
+		ax.set_xlabel("E" + ("[px^2]" if self._alpha==1 else "[eV]"))
 		return ax
 
