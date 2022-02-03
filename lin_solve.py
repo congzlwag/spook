@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse.linalg import spsolve
 from .base import SpookBase
 from .utils import laplacian_square_S, worth_sparsify
+# from memory_profiler import profile
 
 class SpookLinSolve(SpookBase):
     """
@@ -12,8 +13,14 @@ class SpookLinSolve(SpookBase):
     L2 sparsity
     """
     verbose = False
+    _cache_AGtAG = False 
+    # Dominant time complexity comes from linsolve, caching AGtAG is not 
+    # really helpful, so I make it optional.
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
         Bsmoother="laplacian", **kwargs):
+        if 'cache_AGtAG' in kwargs:
+            self._cache_AGtAG = kwargs['cache_AGtAG']
+            del kwargs['cache_AGtAG']
         SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, 
             Bsmoother=Bsmoother, **kwargs)
         # self._Ng = self.shape['Ng']
@@ -38,6 +45,7 @@ class SpookLinSolve(SpookBase):
         self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2
         self.P += self._AtA
 
+    # @profile
     def __setupProbFlat(self):
         # print("Set up a flattened problem")
         self.qhalf = self._Bcontracted.ravel()
@@ -45,9 +53,11 @@ class SpookLinSolve(SpookBase):
         self.P = sps.kron(self.P, sps.eye(self.Ng))
         if hasattr(self,'_AGtAG'):
             self.P += self._AGtAG
-        else:
+        elif self._cache_AGtAG:
             self._AGtAG = self.AGtAG # save to avoid recalculating the tensor product
             self.P += self._AGtAG
+        else:
+            self.P += self.AGtAG # recalc
         self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
 
     def update_lsparse(self, lsparse):

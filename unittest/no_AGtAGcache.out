@@ -1,0 +1,51 @@
+Filename: ../../spook/lin_solve.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    47    103.3 MiB    103.3 MiB           1       @profile
+    48                                             def __setupProbFlat(self):
+    49                                                 # print("Set up a flattened problem")
+    50    103.3 MiB      0.0 MiB           1           self.qhalf = self._Bcontracted.ravel()
+    51    103.4 MiB      0.1 MiB           1           self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2 
+    52    104.2 MiB      0.8 MiB           1           self.P = sps.kron(self.P, sps.eye(self.Ng))
+    53    104.2 MiB      0.0 MiB           1           if hasattr(self,'_AGtAG'):
+    54                                                     self.P += self._AGtAG
+    55    104.2 MiB      0.0 MiB           1           elif self._cache_AGtAG:
+    56                                                     self._AGtAG = self.AGtAG # save to avoid recalculating the tensor product
+    57                                                     self.P += self._AGtAG
+    58                                                 else:
+    59    216.7 MiB    112.6 MiB           1               self.P += self.AGtAG # recalc
+    60    239.6 MiB     22.8 MiB           1           self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
+
+
+Filename: ../../spook/lin_solve.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    47    239.6 MiB    239.6 MiB           1       @profile
+    48                                             def __setupProbFlat(self):
+    49                                                 # print("Set up a flattened problem")
+    50    239.6 MiB      0.0 MiB           1           self.qhalf = self._Bcontracted.ravel()
+    51    205.4 MiB    -34.2 MiB           1           self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2 
+    52    205.4 MiB      0.0 MiB           1           self.P = sps.kron(self.P, sps.eye(self.Ng))
+    53    205.4 MiB      0.0 MiB           1           if hasattr(self,'_AGtAG'):
+    54                                                     self.P += self._AGtAG
+    55    205.4 MiB      0.0 MiB           1           elif self._cache_AGtAG:
+    56                                                     self._AGtAG = self.AGtAG # save to avoid recalculating the tensor product
+    57                                                     self.P += self._AGtAG
+    58                                                 else:
+    59    228.2 MiB     22.8 MiB           1               self.P += self.AGtAG # recalc
+    60    228.2 MiB      0.0 MiB           1           self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
+
+
+Filename: profile_memo.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+    25    102.9 MiB    102.9 MiB           1   @profile
+    26                                         def main(B, A, G):
+    27    239.6 MiB    136.7 MiB           1   	spk1 = SpookLinSolve(B, A, "raw", G, lsparse=1, lsmooth=(0.1,0.1))
+    28    231.5 MiB     -8.0 MiB           1   	X1 = spk1.getXopt(1e-6, (1e-7,1e-8))
+    29    231.5 MiB      0.0 MiB           1   	return X1
+
+
