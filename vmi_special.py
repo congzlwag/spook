@@ -74,3 +74,11 @@ class PhotonFreqResVMI:
 		ax.set_xlabel("E" + ("[px^2]" if self._alpha==1 else "[eV]"))
 		return ax
 
+	@property
+	def keAxis(self):
+		return self._alpha*(self.__gData['x']**2)
+
+	@property
+	def vlsAxis_px(self):
+		return self.__vlsAxisInPX
+	
