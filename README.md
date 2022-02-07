@@ -41,3 +41,13 @@ A rare case that it can be formalized into a linear equation is the third line i
 ## Unit Tests
 
 `unittest/testPosL1.py` is a good example to play with `SpookPosL1`.
+
+
+
+## Dependencies
+
+numpy > 1.19
+
+scipy > 1.7
+
+osqp > 0.6.2
