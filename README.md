@@ -42,7 +42,7 @@ A rare case that it can be formalized into a linear equation is the third line i
 
 The entries in $A^TA, G^TG$ are preferred to be on the order of magnitude $10^0$, because regularization-related quadratic form matrices have their entries around unity. The scale factors are set as
 
-~[normalization](https://latex.codecogs.com/svg.latex?\Large&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
+![normalization](https://latex.codecogs.com/svg.latex?\Large&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
 
 where $N_w, N_q$ are the dimensions along w-axis and q-axis, respectively.
 
