@@ -3,7 +3,7 @@
 ## Target Problem
 Solve $(A \otimes G)X = B$ under regularizations.
 $A, G$ are matrices acting on the two indices of $X$, i.e. 
-![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,\beta}A_{iw}G_{jq}X_{wq}=B_{ij}) 
+![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
 $G$ is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve $AX=B$ under regularizations. 
 
@@ -61,3 +61,6 @@ numpy > 1.19
 scipy > 1.7
 
 osqp > 0.6.2
+
+## Acknowledgement
+This work was supported by the U.S. Department of Energy (DOE), Office of Science, Office of Basic Energy Sciences (BES), Chemical Sciences, Geosciences, and Biosciences Division (CSGB).
