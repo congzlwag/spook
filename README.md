@@ -2,7 +2,8 @@
 
 ## Target Problem
 Solve $(A \otimes G)X = B$​ under regularizations.
-$A, G$​ are matrices acting on the two indices of $X$​, i.e. $\sum_{w,\beta} A_{iw}G_{jq}X_{wq} = B_{ij}$​​ .
+$A, G$​ are matrices acting on the two indices of $X$​, i.e. 
+![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,\beta}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
 $G$ is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve $AX=B$ under regularizations. 
 
