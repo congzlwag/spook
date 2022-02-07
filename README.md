@@ -1,8 +1,8 @@
 # Spooktroscopy: Frequency-Domain Ghost Imaging
 
 ## Target Problem
-Solve $(A \otimes G)X = B$​ under regularizations.
-$A, G$​ are matrices acting on the two indices of $X$​, i.e. 
+Solve $(A \otimes G)X = B$ under regularizations.
+$A, G$ are matrices acting on the two indices of $X$, i.e. 
 ![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,\beta}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
 $G$ is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve $AX=B$ under regularizations. 
@@ -12,9 +12,9 @@ The reason for $G$ is to accommodate the combination with pBASEX, in which case 
 ### Regularizations
 Common regularizations are the following three types, all of which are optional. It depends on what _a prior_ knowledge one wants to enforce on the problem solving.
 
-1. Nonnegativity: $X\succeq 0$​​​ 
-2. Sparsity: To penalize on $\|X\|_1$​​​ or $\|X\|_2^2$​​​
-3. Smoothness: To penalize on roughness of $X$ , along the two indices, independently. For $w$-axis, which is usually the photon energy axis, the form is fixed $\|(L_{N_w}\otimes I)X\|_2^2$ where $L_{N_w}$ is the laplacian. Roughness along the $q$​​​-axis is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
+1. Nonnegativity: $X\succeq 0$
+2. Sparsity: To penalize on $\|X\|_1$ or $\|X\|_2^2$
+3. Smoothness: To penalize on roughness of $X$ , along the two indices, independently. For $w$-axis, which is usually the photon energy axis, the form is fixed $\|(L_{N_w}\otimes I)X\|_2^2$ where $L_{N_w}$ is the laplacian. Roughness along the $q$-axis is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
 
 ## Solvers
 
@@ -38,6 +38,15 @@ For cases where it can be formalized into a [Quadratic Programming](https://en.w
 A rare case that it can be formalized into a linear equation is the third line in the table above: no nonnegativity constraint, and the sparsity is L2 norm squared. This is implemented in `SpookLinSolve` , which calls `numpy.linalg.solve` or `scipy.sparse.linalg.spsolve` .
 
 
+## Normalization Convention
+
+The entries in $A^TA, G^TG$ are preferred to be on the order of magnitude $10^0$, because regularization-related quadratic form matrices have their entries around unity. The scale factors are set as
+
+~[normalization](https://latex.codecogs.com/svg.latex?\Large&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
+
+where $N_w, N_q$ are the dimensions along w-axis and q-axis, respectively.
+
+The entries in $B$ are not always accessible, because of the option to pass in precontracted results and run with `mode='contracted'`. Therefore nothing in either $B$ or $(A\otimes G)^TB$ is normalized.
 
 ## Unit Tests
 
