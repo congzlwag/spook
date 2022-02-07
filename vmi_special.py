@@ -5,7 +5,7 @@ from .utils import laplacian_square_S
 import os
 # from .utils import phspec_preproc
 
-from pbasex import loadG, pbasex
+from pbasex import pbasex
 from matplotlib import pyplot as plt
 
 class PhotonFreqResVMI:
