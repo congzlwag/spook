@@ -35,19 +35,19 @@ B1 += 1e-3*np.linalg.norm(B1) * np.random.randn(*(B1.shape))
 
 SpookPosL1.verbose = True
 spk0 = SpookPosL1(B0, A, "raw", lsparse=1, lsmooth=(0.1,0.01))
-spk1 = SpookPosL1(B1, A, "raw", G, lsparse=1, lsmooth=(0.1,0.1))
+spk1 = SpookPosL1(B1, A, "raw", G, lsparse=1, lsmooth=(0.01,0.01))
 
 X1 = spk1.getXopt()
 fig = plt.figure()
 plt.pcolormesh(X1)
 plt.colorbar()
 
-X1 = spk1.getXopt(1e4, None)
+X1 = spk1.getXopt(50, None)
 fig = plt.figure()
 plt.pcolormesh(X1)
 plt.colorbar()
 
-X1 = spk1.getXopt(0.1, (1e4,0.1))
+X1 = spk1.getXopt(1e-2, (1e2,0.01))
 fig = plt.figure()
 plt.pcolormesh(X1)
 plt.colorbar()

@@ -2,7 +2,7 @@ import scipy.sparse as sps
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from .base import SpookBase
-from .utils import laplacian_square_S, worth_sparsify
+from .utils import laplacian_square_S #, worth_sparsify
 # from memory_profiler import profile
 
 class SpookLinSolve(SpookBase):
