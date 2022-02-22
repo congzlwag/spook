@@ -35,6 +35,8 @@ class SpookQPBase(SpookBase):
             self.res = solution.x
         return self.res
 
+    def set_polish(self, polish_bool=True):
+        self._prob.update_settings(polish=polish_bool)
 
 class SpookPosL1(SpookQPBase):
     """
