@@ -22,7 +22,7 @@ def worth_sparsify(arr):
     elif isinstance(arr, sps.spmatrix):
         return 3*arr.nnz < np.prod(arr.shape)
 
-def dict_innerprod(dictA, dictB):
+def dict_innerprod(dictA, dictB, Aroi=None):
     """
     Inner product of two tensors represented as dictionaries, 
     with the contracted dimension being the keys.
@@ -31,11 +31,23 @@ def dict_innerprod(dictA, dictB):
     assert np.setdiff1d(keys, lsta).size == 0, "Keys mismatch."
     keys.sort()
 
+    # ROI
+    if Aroi is None:
+        Aroi = (0, dictA[keys[0]].size)
+    else:
+        assert len(Aroi)==2 and isinstance(Aroi[0],int) and isinstance(Aroi[-1], int), \
+        "Unrecognized ROI for A: %s"%(str(Aroi))
+    # if Broi is None:
+    #     Broi = (0, dictB[keys[0]].size)
+    # else:
+    #     assert len(Broi)==2 and isinstance(Broi[0],int) and isinstance(Broi[-1], int), \
+    #     "Unrecognized ROI for B: %s"%(str(Broi))
+
     try:
         B = np.empty((len(keys), dictB[keys[0]].size))
         for j, k in enumerate(keys):
             B[j,:] = dictB[k].flatten()
-        A = np.vstack([dictA[k] for k in keys])
+        A = np.vstack([dictA[k][Aroi[0]:Aroi[-1]] for k in keys])
         res = A.T @ B
     except MemoryError:
         # print("Chunk accumulating")
@@ -44,7 +56,7 @@ def dict_innerprod(dictA, dictB):
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
         key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
         for ky_seg in key_segs:
-            A = np.vstack([dictA[k] for k in (ky_seg)])
+            A = np.vstack([dictA[k][Aroi[0]:Aroi[-1]] for k in (ky_seg)])
             B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
             res += A.T @ B
     return res

@@ -12,10 +12,26 @@ class PhotonFreqResVMI:
 	def __init__(self, vls_spec_dict, processed_quad_images_dict, gData, precontractedData=None, alpha_vmi=1, pxWeights=None, **spook_kwargs):
 		if precontractedData is not None:
 			dat = precontractedData
-			bounds = dat['vlse_2bounds']
+			A = dat['A'] # This A is always in full range
+			Na_full = A.shape[1]
+			if "vlsbounds" in dat.files:
+				bounds = dat['vlsbounds']
+			elif "vlse_2bounds" in dat.files:
+				bounds = dat['vlse_2bounds']
+			else:
+				bounds = (0,Na_full) # No cropping
 			AtA = dat['AtA']
 			AtQuad = dat['AtQuad']
-			A = dat['A']
+			if AtA.shape[0] == Na:
+				AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
+			if AtQuad.shape[0] == Na:
+				AtQuad = AtQuad[bounds[0]:bounds[1],:]
+			elif AtQuad.shape[0] != bounds[1]-bounds[0]:
+				raise ValueError("Info loss in AtQuad: AtQuad.shape[0]=%d is neither ptp(bounds)=%d or A.shape[1]=%d."%(AtQuad.shape[0],bounds[1]-bounds[0],Na)
+								+"Please verify precontractedData[vlsbounds] is properly set.")
+			if AtA.shape[0] != AtQuad.shape[0]:
+				A1 = A[:,bounds[0]:bounds[1]]
+				AtA = A1.T @ A1
 		else:
 			print("#Photon spectra:", len(vls_spec_dict.keys()), ". #VMI images", len(processed_quad_images_dict.keys()))
 			BIDs = list(vls_spec_dict.keys())
@@ -23,15 +39,19 @@ class PhotonFreqResVMI:
 			Amean = A.mean(axis=0)
 			bounds = np.argwhere(Amean > Amean.max() * np.exp(-2))
 			bounds = (bounds.min(), bounds.max()+1)
-			AtA =  A.T @ A
-			AtQuad = dict_innerprod(vls_spec_dict, processed_quad_dict)
+			# cropped = True
+			A1 = A[:,bounds[0]:bounds[1]]
+			AtA =  A1.T @ A1
+			AtQuad = dict_innerprod(vls_spec_dict, processed_quad_dict, bounds)
 			npz_fname = "precontracted.npz"
 			if os.path.exists(npz_fname):
 				print("Overwriting", npz_fname)
-			np.savez_compressed(npz_fname, A=A, BIDs=BIDs, AtA=AtA, AtQuad=AtQuad, vlse_2bounds=bounds)
+			np.savez_compressed(npz_fname, A=A, BIDs=BIDs, AtA=AtA, AtQuad=AtQuad, vlse_2bounds=bounds)#, cropped=cropped)
 		
-		AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
-		AtQuad = AtQuad[bounds[0]:bounds[1]]
+		# if not cropped:
+		# 	AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
+		# 	AtQuad = AtQuad[bounds[0]:bounds[1]]
+		# 	cropped = True
 
 		if pxWeights is None:
 			GtG = gData['V'] @ np.diag(gData['S']**2) @ gData['V'].T
