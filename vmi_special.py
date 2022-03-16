@@ -14,20 +14,21 @@ class PhotonFreqResVMI:
 			dat = precontractedData
 			A = dat['A'] # This A is always in full range
 			Na_full = A.shape[1]
-			if "vlsbounds" in dat.files:
+			keys = dat.files if isinstance(precontractedData, np.lib.npyio.NpzFile) else list(dat.keys())
+			if "vlsbounds" in keys:
 				bounds = dat['vlsbounds']
-			elif "vlse_2bounds" in dat.files:
+			elif "vlse_2bounds" in keys:
 				bounds = dat['vlse_2bounds']
 			else:
 				bounds = (0,Na_full) # No cropping
 			AtA = dat['AtA']
 			AtQuad = dat['AtQuad']
-			if AtA.shape[0] == Na:
+			if AtA.shape[0] == Na_full:
 				AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
-			if AtQuad.shape[0] == Na:
+			if AtQuad.shape[0] == Na_full:
 				AtQuad = AtQuad[bounds[0]:bounds[1],:]
 			elif AtQuad.shape[0] != bounds[1]-bounds[0]:
-				raise ValueError("Info loss in AtQuad: AtQuad.shape[0]=%d is neither ptp(bounds)=%d or A.shape[1]=%d."%(AtQuad.shape[0],bounds[1]-bounds[0],Na)
+				raise ValueError("Info loss in AtQuad: AtQuad.shape[0]=%d is neither ptp(bounds)=%d or A.shape[1]=%d."%(AtQuad.shape[0],bounds[1]-bounds[0],Na_full)
 								+"Please verify precontractedData[vlsbounds] is properly set.")
 			if AtA.shape[0] != AtQuad.shape[0]:
 				A1 = A[:,bounds[0]:bounds[1]]
