@@ -1,7 +1,7 @@
 import numpy as np
 from .lin_solve import SpookLinSolve
 import scipy.sparse as sps
-from .utils import laplacian_square_S
+from .utils import laplacian_square_S, dict_innerprod
 import os
 # from .utils import phspec_preproc
 
@@ -9,10 +9,10 @@ from pbasex import pbasex
 from matplotlib import pyplot as plt
 
 class PhotonFreqResVMI:
-	def __init__(self, vls_spec_dict, processed_quad_images_dict, gData, precontractedData=None, alpha_vmi=1, pxWeights=None, **spook_kwargs):
+	def __init__(self, vls_spec_dict, processed_quad_dict, gData, precontractedData=None, alpha_vmi=1, pxWeights=None, **spook_kwargs):
 		if precontractedData is not None:
 			dat = precontractedData
-			A = dat['A'] # This A is always in full range
+			A = dat['A'] # This A is preferably in full range, but the cropped one is fine.
 			Na_full = A.shape[1]
 			keys = dat.files if isinstance(precontractedData, np.lib.npyio.NpzFile) else list(dat.keys())
 			if "vlsbounds" in keys:
@@ -21,6 +21,7 @@ class PhotonFreqResVMI:
 				bounds = dat['vlse_2bounds']
 			else:
 				bounds = (0,Na_full) # No cropping
+# 			print(bounds)
 			AtA = dat['AtA']
 			AtQuad = dat['AtQuad']
 			if AtA.shape[0] == Na_full:
@@ -34,12 +35,12 @@ class PhotonFreqResVMI:
 				A1 = A[:,bounds[0]:bounds[1]]
 				AtA = A1.T @ A1
 		else:
-			print("#Photon spectra:", len(vls_spec_dict.keys()), ". #VMI images", len(processed_quad_images_dict.keys()))
+			print("#Photon spectra:", len(vls_spec_dict.keys()), ". #VMI images", len(processed_quad_dict.keys()))
 			BIDs = list(vls_spec_dict.keys())
 			A = np.asarray([vls_spec_dict[b] for b in BIDs])
 			Amean = A.mean(axis=0)
 			bounds = np.argwhere(Amean > Amean.max() * np.exp(-2))
-			bounds = (bounds.min(), bounds.max()+1)
+			bounds = (int(bounds.min()), int(bounds.max())+1)
 			# cropped = True
 			A1 = A[:,bounds[0]:bounds[1]]
 			AtA =  A1.T @ A1

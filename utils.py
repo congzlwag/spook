@@ -44,9 +44,12 @@ def dict_innerprod(dictA, dictB, Aroi=None):
     #     "Unrecognized ROI for B: %s"%(str(Broi))
 
     try:
-        B = np.empty((len(keys), dictB[keys[0]].size))
+        B = np.empty((len(keys), np.prod(dictB[keys[0]].shape)))
         for j, k in enumerate(keys):
-            B[j,:] = dictB[k].flatten()
+            b = dictB[k]
+            if isinstance(b, sps.spmatrix):
+                b = b.toarray()
+            B[j,:] = b.ravel()
         A = np.vstack([dictA[k][Aroi[0]:Aroi[-1]] for k in keys])
         res = A.T @ B
     except MemoryError:
