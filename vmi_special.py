@@ -9,6 +9,22 @@ from pbasex import pbasex
 from matplotlib import pyplot as plt
 
 class PhotonFreqResVMI:
+	"""
+	This is a specially derived class for omega-resolved VMI
+	Parameters
+		vls_spec_dict:      Dictionary of preprocessed single-shot photon spectra
+		processed_quad_dict:Dictionary of preprocessed single-shot image quadrants
+		gData:				Pre-calculated G data by pBASEX
+		precontractedData:	A dictionary or a npz file containing the following keys
+								"A": 	VLS spectra
+								"AtA":	pre-contracted A.T @ A
+								"AtQuad": pre-contracted A.T @ B where B are the flattened images
+								"vlsbounds" or "vlse_2bounds": boundary indices of the ROI along omega
+		alpha_vmi:          Magnification factor of VMI
+		pxWeights: 			Weights over pixels
+	Keyword arguments
+		spook_kwargs: kwargs that will be directly passed to SpookLinSolve
+	"""
 	def __init__(self, vls_spec_dict, processed_quad_dict, gData, precontractedData=None, alpha_vmi=1, pxWeights=None, **spook_kwargs):
 		if precontractedData is not None:
 			dat = precontractedData
@@ -73,7 +89,7 @@ class PhotonFreqResVMI:
 		print(AtBG.shape, AtA.shape, GtG.shape, rsmoother.shape)
 		self.__spook = SpookLinSolve(AtBG, AtA, 'contracted', GtG, Bsmoother=rsmoother, **spook_kwargs)
 		self.__gData = gData
-		self._alpha = alpha_vmi
+		self._alpha = alpha_vmi 
 		self.__vlsAxisInPX = np.arange(A.shape[1])[bounds[0]:bounds[1]]
 
 	def getXopt_Ewl(self, l=None, **spook_kwargs):
