@@ -91,6 +91,7 @@ class SpookBase:
 
         self.normalizeAG(pre_normalize)
 
+
     @property
     def Na(self):
         return self._AtA.shape[0]
@@ -111,7 +112,7 @@ class SpookBase:
     def solve(self, lsparse=None, lsmooth=None):
         """
         Just for the base class
-        Redefine for every derived class
+        Please Redefine for every derived class
         """
         self._updateHyperParams(lsparse, lsmooth)
         tmp = np.linalg.solve(self._AtA, self._Bcontracted)
@@ -156,6 +157,7 @@ class SpookBase:
             self.__Ascale, self.__Gscale = (1,1)
         else:
             scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
+            # Actual normalization happens here
             self._AtA /= scaleA2
             self.__Ascale = scaleA2**0.5
             if self._GtG is None:
@@ -165,9 +167,15 @@ class SpookBase:
                     scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
                 else:
                     scaleG2 = self._GtG.diagonal().mean()
+                # Actual normalization happens here
                 self._GtG /= scaleG2
             self.__Gscale = scaleG2**0.5
-            self._Bcontracted /= (self.__Ascale*self.__Gscale)
+            # Actual normalization happens here
+            self._Bcontracted /= self.AGscale
+
+    @property
+    def AGscale(self):
+        return self.__Ascale*self.__Gscale
 
     @property
     def AGtAG(self):
@@ -178,12 +186,36 @@ class SpookBase:
         so I make it a non-cache property
         A child class can cache it/its upper triangular part if necessary
         """
+        if hasattr(self, "_AGtAG"):
+            return self._AGtAG
         GtG = sps.eye(self.Ng) if self._GtG is None else self._GtG
         if isinstance(GtG, np.ndarray):
             return np.kron(self._AtA, GtG)
         else:
             return sps.kron(self._AtA, GtG)
 
+    def residueL2(self, Tr_BtB=None, normalized=True):
+        """
+        Calculate the L2 norm of the residue.
+        """
+        Xo = self.res.reshape((self.Na, -1))
+        quad = Xo.T @ self._AtA @ Xo
+        if self._GtG is None:
+            quad = np.trace(quad)
+        else:
+            quad = np.trace(quad @ self._GtG)
+        lin = -2 * np.trace(Xo.T @ self._Bcontracted) # This covered the contraction with G
+        if hasattr(self, "_TrBtB") and self._TrBtB is not None: # Then this is tr(B.T @ B) / scalefactor
+            const = self._TrBtB
+        elif Tr_BtB is not None:
+            const = Tr_BtB / (self.AGscale**2)
+            self._TrBtB = const
+        else:
+            raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
+        rl2 = (quad+lin+const)**0.5
+        if not normalized: # back to the original scale
+            return rl2 * self.AGscale
+        return rl2
 
 if __name__ == '__main__':
     np.random.seed(1996)

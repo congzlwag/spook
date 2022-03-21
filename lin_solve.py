@@ -51,13 +51,12 @@ class SpookLinSolve(SpookBase):
         self.qhalf = self._Bcontracted.ravel()
         self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2 
         self.P = sps.kron(self.P, sps.eye(self.Ng))
-        if hasattr(self,'_AGtAG'):
-            self.P += self._AGtAG
-        elif self._cache_AGtAG:
-            self._AGtAG = self.AGtAG # save to avoid recalculating the tensor product
-            self.P += self._AGtAG
+        tmp = self.AGtAG # The base class' AGtAG first look for attr:_AGtAG
+        self.P += tmp    # So _AGtAG will be automatically reused if cached
+        if self._cache_AGtAG:
+            self._AGtAG = tmp # save to avoid recalculating the tensor product
         else:
-            self.P += self.AGtAG # recalc
+            del tmp # release this temporary memo alloc
         self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
 
     def update_lsparse(self, lsparse):
