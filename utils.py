@@ -32,25 +32,26 @@ def dict_innerprod(dictA, dictB, Aroi=None):
     keys.sort()
 
     # ROI
-    if Aroi is None:
-        Aroi = (0, dictA[keys[0]].size)
-    else:
+    if Aroi is not None:
+        assert dictA[keys[0]].ndim <= 2, "ROI is not supported for ndim>2 data."
         assert len(Aroi)==2 and isinstance(Aroi[0],int) and isinstance(Aroi[-1], int), \
         "Unrecognized ROI for A: %s"%(str(Aroi))
-    # if Broi is None:
-    #     Broi = (0, dictB[keys[0]].size)
-    # else:
-    #     assert len(Broi)==2 and isinstance(Broi[0],int) and isinstance(Broi[-1], int), \
-    #     "Unrecognized ROI for B: %s"%(str(Broi))
+        if Aroi[-1] < Aroi[0]:
+            Aroi = np.flip(Aroi)
 
+    def matricize_tensor_bykey(dct, ky_list, roi=None):
+        N1 = np.prod(dct[ky_list[0]].shape) if roi is None else np.ptp(roi)
+        ret = np.empty((len(ky_list), N1), dtype='d')
+        for j, ky in enumerate(ky_list):
+            v = dct[ky]
+            if isinstance(v, sps.spmatrix):
+                v = v.toarray()
+            tmp = v.ravel()
+            ret[j, :] = tmp if roi is None else tmp[roi[0]:roi[-1]]
+        return ret
     try:
-        B = np.empty((len(keys), np.prod(dictB[keys[0]].shape)))
-        for j, k in enumerate(keys):
-            b = dictB[k]
-            if isinstance(b, sps.spmatrix):
-                b = b.toarray()
-            B[j,:] = b.ravel()
-        A = np.vstack([dictA[k][Aroi[0]:Aroi[-1]] for k in keys])
+        B = matricize_tensor_bykey(dictB, keys)
+        A = matricize_tensor_bykey(dictA, keys, Aroi)
         res = A.T @ B
     except MemoryError:
         # print("Chunk accumulating")
@@ -59,8 +60,8 @@ def dict_innerprod(dictA, dictB, Aroi=None):
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
         key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
         for ky_seg in key_segs:
-            A = np.vstack([dictA[k][Aroi[0]:Aroi[-1]] for k in (ky_seg)])
-            B = np.vstack([dictB[k].flatten() for k in (ky_seg)])
+            A = matricize_tensor_bykey(dictA, ky_seg, Aroi)
+            B = matricize_tensor_bykey(dictB, ky_seg)
             res += A.T @ B
     return res
 
