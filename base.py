@@ -39,6 +39,7 @@ class SpookBase:
             self._Bcontracted = B
             self._GtG = G
             assert A.shape[0] == B.shape[0] and (G is None or B.shape[1]==G.shape[1])
+            self._TrBtB = None
         else:
             B_is_dict = False
             if isinstance(B, np.ndarray):
@@ -47,6 +48,7 @@ class SpookBase:
                     B = B.reshape((-1,1))
                 Ns, Na = A.shape
                 Nb = B.shape[1]
+                self._TrBtB = np.trace(B.T @ B)
             elif isinstance(B, dict):
                 assert isinstance(A, dict), "When B is a dict, A has to be a dict too."
                 keys = list(A.keys())
@@ -54,8 +56,9 @@ class SpookBase:
                 Na = A[keys[0]].size
                 Nb = B[keys[0]].size
                 B_is_dict = True
+                self._TrBtB = np.trace(dict_innerprod(B, B))
             else:
-                raise TypeError("type(B) can only be either dict or array") 
+                raise TypeError("B can only be either a dict or an array") 
             assert Ns == (len(B))
             Ng = Nb if G is None else G.shape[1]
             assert (G is None or Nb == G.shape[0])
