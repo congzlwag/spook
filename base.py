@@ -132,9 +132,9 @@ class SpookBase:
         if updated and self.verbose: print("Updated")
         if updated or not hasattr(self,'res'):
             self.solve(None, None)
-        Xo = self.res.reshape((self.Na, -1)) 
-        Xo /= (self.__Ascale*self.__Gscale)
-        return Xo
+        return self.res.reshape((self.Na, -1)) / self.AGscale
+        # Xo /= (self.__Ascale*self.__Gscale)
+        # return Xo
 
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
