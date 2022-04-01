@@ -39,7 +39,7 @@ class SpookBase:
             self._Bcontracted = B
             self._GtG = G
             assert A.shape[0] == B.shape[0] and (G is None or B.shape[1]==G.shape[1])
-            self._TrBtB = None
+            self._TrBtB = 0
         else:
             B_is_dict = False
             if isinstance(B, np.ndarray):
@@ -175,6 +175,7 @@ class SpookBase:
             self.__Gscale = scaleG2**0.5
             # Actual normalization happens here
             self._Bcontracted /= self.AGscale
+            # self._TrBtB /= (scaleA2*scaleG2)
 
     @property
     def AGscale(self):
@@ -200,6 +201,8 @@ class SpookBase:
     def residueL2(self, Tr_BtB=None, normalized=True):
         """
         Calculate the L2 norm of the residue.
+        |(A otimes G)X - B|_2
+        With A & G normalized
         """
         Xo = self.res.reshape((self.Na, -1))
         quad = Xo.T @ self._AtA @ Xo
@@ -208,18 +211,21 @@ class SpookBase:
         else:
             quad = np.trace(quad @ self._GtG)
         lin = -2 * np.trace(Xo.T @ self._Bcontracted) # This covered the contraction with G
-        if hasattr(self, "_TrBtB") and self._TrBtB is not None: # Then this is tr(B.T @ B) / scalefactor
+        if hasattr(self, "_TrBtB") and self._TrBtB > 0: # Then this is tr(B.T @ B) / scalefactor
             const = self._TrBtB
         elif Tr_BtB is not None:
-            const = Tr_BtB / (self.AGscale**2)
-            self._TrBtB = const
+            self._TrBtB = Tr_BtB
         else:
             raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
-        rl2 = (quad+lin+const)**0.5
+        if self.verbose: print("Terms in |residue|_2^2: quad=%.1g, lin=%.1g, const=%.1g"%(quad, lin, const))
+        rl2 = (max(quad+lin+const,0))**0.5
         if not normalized: # back to the original scale
             return rl2 * self.AGscale
         return rl2
 
+    def scan_lsparse(self, lsparse_list):
+        pass
+        
 if __name__ == '__main__':
     np.random.seed(1996)
     Ardm = np.random.randn(1000,30)
