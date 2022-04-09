@@ -23,6 +23,17 @@ def worth_sparsify(arr):
     elif isinstance(arr, sps.spmatrix):
         return 3*arr.nnz < np.prod(arr.shape)
 
+def matricize_tensor_bykey(dct, ky_list, roi=None):
+    N1 = np.prod(dct[ky_list[0]].shape) if roi is None else np.ptp(roi)
+    ret = np.empty((len(ky_list), N1), dtype='d')
+    for j, ky in enumerate(ky_list):
+        v = dct[ky]
+        if isinstance(v, sps.spmatrix):
+            v = v.toarray()
+        tmp = v.ravel()
+        ret[j, :] = tmp if roi is None else tmp[roi[0]:roi[-1]]
+    return ret
+
 def dict_innerprod(dictA, dictB, Aroi=None):
     """
     Inner product of two tensors represented as dictionaries, 
@@ -40,16 +51,6 @@ def dict_innerprod(dictA, dictB, Aroi=None):
         if Aroi[-1] < Aroi[0]:
             Aroi = np.flip(Aroi)
 
-    def matricize_tensor_bykey(dct, ky_list, roi=None):
-        N1 = np.prod(dct[ky_list[0]].shape) if roi is None else np.ptp(roi)
-        ret = np.empty((len(ky_list), N1), dtype='d')
-        for j, ky in enumerate(ky_list):
-            v = dct[ky]
-            if isinstance(v, sps.spmatrix):
-                v = v.toarray()
-            tmp = v.ravel()
-            ret[j, :] = tmp if roi is None else tmp[roi[0]:roi[-1]]
-        return ret
     try:
         B = matricize_tensor_bykey(dictB, keys)
         A = matricize_tensor_bykey(dictA, keys, Aroi)
@@ -65,6 +66,22 @@ def dict_innerprod(dictA, dictB, Aroi=None):
             B = matricize_tensor_bykey(dictB, ky_seg)
             res += A.T @ B
     return res
+
+def dict_allsqsum(dictB):
+    keys = list(dictB.keys())
+    try:
+        B = matricize_tensor_bykey(dictB, keys)
+        res = (B**2).sum()
+    except:
+        res = 0
+        chunk_size = 1000
+        key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
+        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
+        for ky_seg in key_segs:
+            B = matricize_tensor_bykey(dictB, ky_seg)
+            res += (B**2).sum()
+    return res
+
 
 def iso_struct(csc_mata, csc_matb):
     """

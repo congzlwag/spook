@@ -3,7 +3,7 @@
 """
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
-from .utils import dict_innerprod, show_lcurve
+from .utils import dict_innerprod, dict_allsqsum, show_lcurve
 import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import interp1d
@@ -58,7 +58,7 @@ class SpookBase:
                 Na = A[keys[0]].size
                 Nb = B[keys[0]].size
                 B_is_dict = True
-                self._TrBtB = np.trace(dict_innerprod(B, B))
+                self._TrBtB = dict_allsqsum(B)
             else:
                 raise TypeError("B can only be either a dict or an array") 
             assert Ns == (len(B))
@@ -220,6 +220,7 @@ class SpookBase:
             const = self._TrBtB
         elif Tr_BtB is not None:
             self._TrBtB = Tr_BtB
+            const = Tr_BtB
         else:
             raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
         if self.verbose: print("Terms in |residue|_2^2: quad=%.1g, lin=%.1g, const=%.1g"%(quad, lin, const))
