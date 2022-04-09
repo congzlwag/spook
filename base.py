@@ -3,9 +3,10 @@
 """
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
-from .utils import dict_innerprod
+from .utils import dict_innerprod, show_lcurve
 import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
+from scipy.interpolate import interp1d
 
 class SpookBase:
     """
@@ -17,6 +18,7 @@ class SpookBase:
     G is an optional operator on the dimension Nb
     """
     smoothness_drop_boundaries = True
+    verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
         Bsmoother="laplacian", pre_normalize=True):
         """
@@ -136,6 +138,9 @@ class SpookBase:
         # Xo /= (self.__Ascale*self.__Gscale)
         # return Xo
 
+    def sparsity(self, X=None):
+        raise NotImplementedError("Sparsity function should be defined in the child class.")
+
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
         """
@@ -198,7 +203,7 @@ class SpookBase:
         else:
             return sps.kron(self._AtA, GtG)
 
-    def residueL2(self, Tr_BtB=None, normalized=True):
+    def residueL2(self, Tr_BtB=None):
         """
         Calculate the L2 norm of the residue.
         |(A otimes G)X - B|_2
@@ -219,12 +224,50 @@ class SpookBase:
             raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
         if self.verbose: print("Terms in |residue|_2^2: quad=%.1g, lin=%.1g, const=%.1g"%(quad, lin, const))
         rl2 = (max(quad+lin+const,0))**0.5
-        if not normalized: # back to the original scale
-            return rl2 * self.AGscale
+        # if not normalized: # back to the original scale
+        #     return rl2 * self.AGscale
         return rl2
 
-    def scan_lsparse(self, lsparse_list):
-        pass
+    def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
+        assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."
+        res = np.zeros((len(lsparse_list),3))
+        for ll, lsp in enumerate(lsparse_list):
+            self.solve(lsp, None)
+            res[ll,:] = [lsp, self.residueL2(), self.sparsity()]
+        idc = np.argsort(res[:,0])
+        res = res[idc]
+        if not calc_curvature:
+            return res
+        Ninterp_min = 101 # Minimal Number of points in interpolation
+        margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
+        res_alllg = np.log10(res)
+        spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
+        ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
+        # Try using spl._spline.derivative
+        rr = np.asarray([s(ll) for s in spls])
+        tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
+        qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
+        # Numerical Diff
+        # dl = np.ptp(ll) / (ll.size-1)
+        # rr = np.asarray([s(ll) for s in spls])
+        # tt = np.diff(rr, axis=1) / dl 
+        # tt = 0.5*(tt[:,1:]+tt[:,:-1]) # tangent vector
+        # qq = np.diff(rr, n=2, axis=1) / (dl**2)
+        # print(tt.shape, qq.shape)
+        kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
+        ss = np.linalg.norm(tt, axis=0).ravel()
+        kk /= ss**3 # curvature
+        curv_dat = np.vstack((ll,rr,ss,kk)).T
+        valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
+        curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
+        # print(plot)
+        if plot:
+            # print("Calling show_lcurve")
+            show_lcurve(res_alllg, curv_dat, plot)
+        idM = np.argmax(curv_dat[:,-1])
+        print(curv_dat[idM,0])
+        self.solve(10**(curv_dat[idM,0]), None)
+        return res, curv_dat
         
 if __name__ == '__main__':
     np.random.seed(1996)

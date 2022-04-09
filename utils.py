@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sps
+from matplotlib import pyplot as plt
 
 def laplacian1D_S(N):
     Lmat = sps.eye(N)*(-2)
@@ -103,3 +104,31 @@ def comboNormalize(A, B, return_scalefactors=False):
         return AtA, AtB, scaleA, scaleB
     return AtA, AtB
 
+def show_lcurve(log_scan_results, curv_dat, plot):
+    """
+    Plot the data in a L-curve scan.
+    """
+    if plot == True:
+        # print("Making a new figure")
+        fig = plt.figure(figsize=(8,4))
+    else:
+        fig = plot 
+    ax0 = fig.add_subplot(1,2,1)
+    sc = ax0.scatter(log_scan_results[:,1],log_scan_results[:,2], c=log_scan_results[:,0])
+    cax = fig.colorbar(sc,ax=ax0)
+    cax.set_label(r"$\lg \lambda_{sp}$")
+    ax0.plot(curv_dat[:,1],curv_dat[:,2],'k')
+    ax0.set_xlabel(r"$\lg \|AX-B\|_2$")
+    ax0.set_ylabel(r"$\lg h_{sp}(X)$")
+    ax2 = fig.add_subplot(2,2,2)
+    ax2.plot(curv_dat[:,0],curv_dat[:,3])
+    ax2.set_ylabel(r"|Tangent Vec|")
+    ax3 = fig.add_subplot(2,2,4)
+    ax3.plot(curv_dat[:,0],curv_dat[:,4])
+    ax3.set_xlabel(r"$\lg \lambda_{sp}$")
+    ax3.set_ylabel(r"Curvature")
+    idM = np.argmax(curv_dat[:,-1])
+    ax0.plot(curv_dat[idM,1],curv_dat[idM,2], "r+")
+    ax3.plot(curv_dat[idM,0],curv_dat[idM,4], "r+")
+    fig.tight_layout()
+    return fig, idM
