@@ -171,7 +171,7 @@ class SpookBase:
             # Actual normalization happens here
             self._AtA /= scaleA2
             self.__Ascale = scaleA2**0.5
-            print("Assigned __Ascale =", self.__Ascale)
+            #print("Assigned __Ascale =", self.__Ascale)
             if self._GtG is None:
                 scaleG2 = 1
             else:
