@@ -80,9 +80,11 @@ class SpookBase:
             else:
                 self._Bcontracted = A.T @ B
             if not (Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb)) and G is not None:
+                print("Contract with G after A.T@B")
                 self._Bcontracted = self._Bcontracted @ G
             self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
             self._GtG = None if G is None else G.T @ G
+#             print("__Ascale =", (np.trace(self._AtA) / (self._AtA.shape[1]))**0.5)
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
@@ -95,6 +97,7 @@ class SpookBase:
             self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
 
         self.normalizeAG(pre_normalize)
+#         print("At the end of __init__, __Ascale =", self.__Ascale)
 
 
     @property
@@ -168,6 +171,7 @@ class SpookBase:
             # Actual normalization happens here
             self._AtA /= scaleA2
             self.__Ascale = scaleA2**0.5
+            print("Assigned __Ascale =", self.__Ascale)
             if self._GtG is None:
                 scaleG2 = 1
             else:
