@@ -1,6 +1,6 @@
 import scipy.sparse as sps
 import numpy as np
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import spsolve, cg
 from .base import SpookBase
 from .utils import laplacian_square_S #, worth_sparsify
 # from memory_profiler import profile
@@ -74,10 +74,26 @@ class SpookLinSolve(SpookBase):
     def solve(self, lsparse=None, lsmooth=None):
         self._updateHyperParams(lsparse, lsmooth)
         if self.verbose: print("Solving Lin. Eq.")
-        if isinstance(self.P, np.ndarray):
-            self.res = np.linalg.solve(self.P, self.qhalf)
-        else:
-            self.res = spsolve(self.P, self.qhalf)
+        bb  = self.qhalf.reshape((self.qhalf.shape[0],-1))
+        res = np.zeros((self.P.shape[1], bb.shape[1]))
+        if self.res is not None:
+            x0x0 = self.res.reshape((self.res.shape[0],-1))
+        # print(res.shape, bb.shape)
+        for ib in range(bb.shape[1]):
+            x0 = None if self.res is None else x0x0[:,ib]
+            res[:,ib], info = cg(self.P, bb[:,ib], x0=x0, tol=1e-6)
+            # print(info)
+            if info != 0:
+                if info > 0:
+                    Warning("Convergence to tolerance not achieved")
+                elif info < 0:
+                    Warning("Illegal input or breakdown")
+                return
+        self.res = res
+        # if isinstance(self.P, np.ndarray):
+        #     self.res = np.linalg.solve(self.P, self.qhalf)
+        # else:
+        #     self.res = spsolve(self.P, self.qhalf)
 
     def sparsity(self, X=None):
         if X is None:

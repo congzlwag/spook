@@ -98,7 +98,7 @@ class SpookBase:
 
         self.normalizeAG(pre_normalize)
 #         print("At the end of __init__, __Ascale =", self.__Ascale)
-
+        self.res = None
 
     @property
     def Na(self):
@@ -135,7 +135,7 @@ class SpookBase:
     def getXopt(self, lsparse=None, lsmooth=None):
         updated = self._updateHyperParams(lsparse, lsmooth)
         if updated and self.verbose: print("Updated")
-        if updated or not hasattr(self,'res'):
+        if updated or self.res is None:
             self.solve(None, None)
         return self.res.reshape((self.Na, -1)) / self.AGscale
         # Xo /= (self.__Ascale*self.__Gscale)
