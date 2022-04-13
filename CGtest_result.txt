@@ -1,0 +1,7 @@
+CG turns out to be slower than solve
+For the typical Argon task, I ran this cell in testLcurve.ipynb
+> tic = time()
+> lsp_ = np.logspace(-1,4,3) #31
+> res = spk.scan_lsparse(lsp_,False,plot=False)
+> print("Duration", time()-tic)
+CG took 390.7s, solve took 213.0s
