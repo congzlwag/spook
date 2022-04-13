@@ -10,7 +10,7 @@ class SpookLinSolve(SpookBase):
     Spooktroscopy that involves only linear eq solving
     This means:
     no positivity constraint 
-    L2 sparsity
+    L2 squared sparsity
     """
     verbose = False
     _cache_AGtAG = False 
@@ -78,6 +78,12 @@ class SpookLinSolve(SpookBase):
             self.res = np.linalg.solve(self.P, self.qhalf)
         else:
             self.res = spsolve(self.P, self.qhalf)
+
+    def sparsity(self, X=None):
+        if X is None:
+            X = self.res
+        X = X.ravel()
+        return np.linalg.norm(X)
 
 if __name__ == '__main__':
     np.random.seed(1996)

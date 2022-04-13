@@ -98,6 +98,12 @@ class SpookPosL1(SpookQPBase):
             self._P = Pnew
             self.setupProb()
 
+    def sparsity(self, X=None):
+        if X is None:
+            X = self.res
+        X = X.ravel()
+        return abs(X).sum()
+
 class SpookQP1D(SpookBase):
     def __init__(self):
         pass

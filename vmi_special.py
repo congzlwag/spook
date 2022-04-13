@@ -85,7 +85,7 @@ class PhotonFreqResVMI:
 		rsmoother = gData['frk'].T @ laplacian_square_S(gData['x'].size, True) @ gData['frk']
 		rsmoother = sps.kron(sps.eye(gData['nl']), rsmoother)
 
-		print(r"Tensor shapes: (A \otimes G)t B, AtA, GtG, rsmoother")
+		print(r"Tensor shapes: (A \otimes G).T@B, AtA, GtG, rsmoother")
 		print(AtBG.shape, AtA.shape, GtG.shape, rsmoother.shape)
 		self.__spook = SpookLinSolve(AtBG, AtA, 'contracted', GtG, Bsmoother=rsmoother, **spook_kwargs)
 		self.__gData = gData

@@ -3,9 +3,10 @@
 """
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
-from .utils import dict_innerprod
+from .utils import dict_innerprod, dict_allsqsum, show_lcurve
 import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
+from scipy.interpolate import interp1d
 
 class SpookBase:
     """
@@ -17,6 +18,7 @@ class SpookBase:
     G is an optional operator on the dimension Nb
     """
     smoothness_drop_boundaries = True
+    verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
         Bsmoother="laplacian", pre_normalize=True):
         """
@@ -39,7 +41,7 @@ class SpookBase:
             self._Bcontracted = B
             self._GtG = G
             assert A.shape[0] == B.shape[0] and (G is None or B.shape[1]==G.shape[1])
-            self._TrBtB = None
+            self._TrBtB = 0
         else:
             B_is_dict = False
             if isinstance(B, np.ndarray):
@@ -56,7 +58,7 @@ class SpookBase:
                 Na = A[keys[0]].size
                 Nb = B[keys[0]].size
                 B_is_dict = True
-                self._TrBtB = np.trace(dict_innerprod(B, B))
+                self._TrBtB = dict_allsqsum(B)
             else:
                 raise TypeError("B can only be either a dict or an array") 
             assert Ns == (len(B))
@@ -78,9 +80,11 @@ class SpookBase:
             else:
                 self._Bcontracted = A.T @ B
             if not (Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb)) and G is not None:
+                print("Contract with G after A.T@B")
                 self._Bcontracted = self._Bcontracted @ G
             self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
             self._GtG = None if G is None else G.T @ G
+#             print("__Ascale =", (np.trace(self._AtA) / (self._AtA.shape[1]))**0.5)
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
@@ -93,6 +97,7 @@ class SpookBase:
             self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
 
         self.normalizeAG(pre_normalize)
+#         print("At the end of __init__, __Ascale =", self.__Ascale)
 
 
     @property
@@ -136,6 +141,9 @@ class SpookBase:
         # Xo /= (self.__Ascale*self.__Gscale)
         # return Xo
 
+    def sparsity(self, X=None):
+        raise NotImplementedError("Sparsity function should be defined in the child class.")
+
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
         """
@@ -163,6 +171,7 @@ class SpookBase:
             # Actual normalization happens here
             self._AtA /= scaleA2
             self.__Ascale = scaleA2**0.5
+            #print("Assigned __Ascale =", self.__Ascale)
             if self._GtG is None:
                 scaleG2 = 1
             else:
@@ -175,6 +184,7 @@ class SpookBase:
             self.__Gscale = scaleG2**0.5
             # Actual normalization happens here
             self._Bcontracted /= self.AGscale
+            # self._TrBtB /= (scaleA2*scaleG2)
 
     @property
     def AGscale(self):
@@ -197,9 +207,11 @@ class SpookBase:
         else:
             return sps.kron(self._AtA, GtG)
 
-    def residueL2(self, Tr_BtB=None, normalized=True):
+    def residueL2(self, Tr_BtB=None):
         """
         Calculate the L2 norm of the residue.
+        |(A otimes G)X - B|_2
+        With A & G normalized
         """
         Xo = self.res.reshape((self.Na, -1))
         quad = Xo.T @ self._AtA @ Xo
@@ -208,18 +220,60 @@ class SpookBase:
         else:
             quad = np.trace(quad @ self._GtG)
         lin = -2 * np.trace(Xo.T @ self._Bcontracted) # This covered the contraction with G
-        if hasattr(self, "_TrBtB") and self._TrBtB is not None: # Then this is tr(B.T @ B) / scalefactor
+        if hasattr(self, "_TrBtB") and self._TrBtB > 0: # Then this is tr(B.T @ B) / scalefactor
             const = self._TrBtB
         elif Tr_BtB is not None:
-            const = Tr_BtB / (self.AGscale**2)
-            self._TrBtB = const
+            self._TrBtB = Tr_BtB
+            const = Tr_BtB
         else:
             raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
-        rl2 = (quad+lin+const)**0.5
-        if not normalized: # back to the original scale
-            return rl2 * self.AGscale
+        if self.verbose: print("Terms in |residue|_2^2: quad=%.1g, lin=%.1g, const=%.1g"%(quad, lin, const))
+        rl2 = (max(quad+lin+const,0))**0.5
+        # if not normalized: # back to the original scale
+        #     return rl2 * self.AGscale
         return rl2
 
+    def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
+        assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."
+        res = np.zeros((len(lsparse_list),3))
+        for ll, lsp in enumerate(lsparse_list):
+            self.solve(lsp, None)
+            res[ll,:] = [lsp, self.residueL2(), self.sparsity()]
+        idc = np.argsort(res[:,0])
+        res = res[idc]
+        if not calc_curvature:
+            return res
+        Ninterp_min = 101 # Minimal Number of points in interpolation
+        margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
+        res_alllg = np.log10(res)
+        spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
+        ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
+        # Try using spl._spline.derivative
+        rr = np.asarray([s(ll) for s in spls])
+        tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
+        qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
+        # Numerical Diff
+        # dl = np.ptp(ll) / (ll.size-1)
+        # rr = np.asarray([s(ll) for s in spls])
+        # tt = np.diff(rr, axis=1) / dl 
+        # tt = 0.5*(tt[:,1:]+tt[:,:-1]) # tangent vector
+        # qq = np.diff(rr, n=2, axis=1) / (dl**2)
+        # print(tt.shape, qq.shape)
+        kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
+        ss = np.linalg.norm(tt, axis=0).ravel()
+        kk /= ss**3 # curvature
+        curv_dat = np.vstack((ll,rr,ss,kk)).T
+        valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
+        curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
+        # print(plot)
+        if plot:
+            # print("Calling show_lcurve")
+            show_lcurve(res_alllg, curv_dat, plot)
+        idM = np.argmax(curv_dat[:,-1])
+        print(curv_dat[idM,0])
+        self.solve(10**(curv_dat[idM,0]), None)
+        return res, curv_dat
+        
 if __name__ == '__main__':
     np.random.seed(1996)
     Ardm = np.random.randn(1000,30)
