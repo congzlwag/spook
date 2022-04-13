@@ -61,7 +61,10 @@ class SpookLinSolve(SpookBase):
 
     def update_lsparse(self, lsparse):
         # Updating lsparse won't change need_to_flatten
-        self.P += (lsparse - self.lsparse) * sps.eye(self.P.shape[0])
+        dlsp = lsparse - self.lsparse
+        for i in range(self.P.shape[0]):
+            self.P[i,i] += dlsp
+        # self.P += (lsparse - self.lsparse) * sps.eye(self.P.shape[0])
         self.lsparse = lsparse
 
     def update_lsmooth(self, lsmooth):
