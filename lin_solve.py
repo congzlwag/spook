@@ -61,7 +61,10 @@ class SpookLinSolve(SpookBase):
 
     def update_lsparse(self, lsparse):
         # Updating lsparse won't change need_to_flatten
-        self.P += (lsparse - self.lsparse) * sps.eye(self.P.shape[0])
+        dlsp = lsparse - self.lsparse
+        for i in range(self.P.shape[0]):
+            self.P[i,i] += dlsp
+        # self.P += (lsparse - self.lsparse) * sps.eye(self.P.shape[0])
         self.lsparse = lsparse
 
     def update_lsmooth(self, lsmooth):
@@ -81,6 +84,7 @@ class SpookLinSolve(SpookBase):
         # print(res.shape, bb.shape)
         for ib in range(bb.shape[1]):
             x0 = None if self.res is None else x0x0[:,ib]
+            if self.verbose: print("Col",ib,"x0 is None?", x0 is None)
             res[:,ib], info = cg(self.P, bb[:,ib], x0=x0, tol=1e-6)
             # print(info)
             if info != 0:
@@ -89,7 +93,7 @@ class SpookLinSolve(SpookBase):
                 elif info < 0:
                     Warning("Illegal input or breakdown")
                 return
-        self.res = res
+        self.res = np.squeeze(res)
         # if isinstance(self.P, np.ndarray):
         #     self.res = np.linalg.solve(self.P, self.qhalf)
         # else:
