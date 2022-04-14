@@ -2,20 +2,20 @@
 
 ## Target Problem
 Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> under [regularizations](#Regularizations). A, G are matrices acting on the two indices of X, i.e. 
-![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
+![(AG)X=B](https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
-G is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
+G is optional, by default (`G=None`) it is identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
 
-The reason for G is to accommodate the combination with pBASEX, in which case this is solving the two linear inversions in one step.
+The reason for G is to accommodate the combination with [pBASEX](https://github.com/e-champenois/CPBASEX), in which case this is solving the two linear inversions in one step.
 
 ### Regularizations
 Common regularizations are the following three types, all of which optional, depending on what _a prior_ knowledge one wants to enforce on the problem solving.
 
-1. Nonnegativity: <img src="https://render.githubusercontent.com/render/math?math=X\succeq 0">
+1. Nonnegativity: To constrain <img src="https://render.githubusercontent.com/render/math?math=X\succeq 0">
 2. Sparsity: To penalize on <img src="https://render.githubusercontent.com/render/math?math=\|X\|_1"> or <img src="https://render.githubusercontent.com/render/math?math=\|X\|_2^2">
-3. Smoothness: To penalize on roughness of X , along the two indices, independently. For <img src="https://render.githubusercontent.com/render/math?math=\omega">-axis, which is the photon energy axis, the form is fixed <img src="https://render.githubusercontent.com/render/math?math=\|(L_{N_w}\otimes I)X\|_2^2"> where <img src="https://render.githubusercontent.com/render/math?math=L_{N_w}"> is the laplacian. Roughness along the second axis of X is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
+3. Smoothness: To penalize on roughness of X , along the two indices, independently. For <img src="https://render.githubusercontent.com/render/math?math=\omega">-axis, which is the photon energy axis, the form is fixed <img src="https://render.githubusercontent.com/render/math?math=\|(L_{N_w}\otimes I)X\|_2^2"> where <img src="https://render.githubusercontent.com/render/math?math=L_{N_w}"> is the [laplacian](https://en.wikipedia.org/wiki/Laplace_operator). Roughness along the second axis of X is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
 
-Sparsity and Smoothness are enforced through penalties in this package, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth` in the total objective function.
+Sparsity and Smoothness are enforced through penalties in the total obejctive function, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth`. `lsmooth` is a 2-tuple that weight roughness penalty along the two axes of X respectively. The hyperparameters can be passed in during instantiation and also updated afterwards. It is recommended to call method `getXopt` with the hyperparameter(s) to be updated, because it will update, solve, and return the optimal X in one step. Calling `solve` with  the hyperparameter(s) to be updated and then calling `getXopt()` without input is effectively the same, and the problem will be solved once as long as there is no update.
 
 ## Solvers
 
@@ -41,13 +41,16 @@ A rare case that it can be formalized into a linear equation is the third line i
 
 ## Normalization Convention
 
-The entries in $A^TA, G^TG$ are preferred to be on the order of magnitude $10^0$, because regularization-related quadratic form matrices have their entries around unity. The scale factors are set as
+The entries in <img src="https://render.githubusercontent.com/render/math?math=A^TA, G^TG"> are preferred to be on the order of unity, because regularization-related quadratic form matrices have their entries around unity. The scale factors are set as
 
-![normalization](https://latex.codecogs.com/svg.latex?\Large&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
+![normalization](https://latex.codecogs.com/svg.latex?&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
 
-where $N_w, N_q$ are the dimensions along w-axis and q-axis, respectively.
+where <img src="https://render.githubusercontent.com/render/math?math=N_w, N_q"> are the dimensions along w-axis and q-axis, respectively. <img src="https://render.githubusercontent.com/render/math?math=s_as_g"> is an accessible property of the solver `AGscale`. To normalize or not is controlled by parameter `pre_normalize` in instanciation. 
 
-The entries in $B$ are not always accessible, because of the option to pass in precontracted results and run with `mode='contracted'`. Therefore nothing in either $B$ or $(A\otimes G)^TB$ is normalized.
+**By default** `pre_normalize=True`, i.e. `self._AtA` =<img src="https://render.githubusercontent.com/render/math?math=A^TA/s_a^2">, `self._GtG` =<img src="https://render.githubusercontent.com/render/math?math=G^TG/s_g^2">, and `self._Bcontracted` = <img src="https://render.githubusercontent.com/render/math?math=(A^T\otimesG^T)B/(s_as_g)">. In this case, the direct solution `self.res` is scaled as <img src="https://render.githubusercontent.com/render/math?math=s_as_g X_\mathrm{opt}"> , but in `getXopt` the final result of <img src="https://render.githubusercontent.com/render/math?math=X_\mathrm{opt}"> is scaled back before returned.
+
+The entries in B are not always accessible, because of the option to pass in precontracted results and in `mode='contracted'`. Therefore B is not normalized. 
+
 
 ## Unit Tests
 
