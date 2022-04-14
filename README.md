@@ -1,20 +1,21 @@
 # Spooktroscopy: Frequency-Domain Ghost Imaging
 
 ## Target Problem
-Solve $(A \otimes G)X = B$ under regularizations.
-$A, G$ are matrices acting on the two indices of $X$, i.e. 
+Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> under [regularizations](#Regularizations). A, G are matrices acting on the two indices of X, i.e. 
 ![(AG)X=B](https://latex.codecogs.com/svg.latex?\Large&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
-$G$ is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve $AX=B$ under regularizations. 
+G is optional, by default (`G=None`) it is identity, in which case this is more like the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
 
-The reason for $G$ is to accommodate the combination with pBASEX, in which case this is solving the two linear inversions in one.
+The reason for G is to accommodate the combination with pBASEX, in which case this is solving the two linear inversions in one step.
 
 ### Regularizations
-Common regularizations are the following three types, all of which are optional. It depends on what _a prior_ knowledge one wants to enforce on the problem solving.
+Common regularizations are the following three types, all of which optional, depending on what _a prior_ knowledge one wants to enforce on the problem solving.
 
-1. Nonnegativity: $X\succeq 0$
-2. Sparsity: To penalize on $\|X\|_1$ or $\|X\|_2^2$
-3. Smoothness: To penalize on roughness of $X$ , along the two indices, independently. For $w$-axis, which is usually the photon energy axis, the form is fixed $\|(L_{N_w}\otimes I)X\|_2^2$ where $L_{N_w}$ is the laplacian. Roughness along the $q$-axis is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
+1. Nonnegativity: <img src="https://render.githubusercontent.com/render/math?math=X\succeq 0">
+2. Sparsity: To penalize on <img src="https://render.githubusercontent.com/render/math?math=\|X\|_1"> or <img src="https://render.githubusercontent.com/render/math?math=\|X\|_2^2">
+3. Smoothness: To penalize on roughness of X , along the two indices, independently. For <img src="https://render.githubusercontent.com/render/math?math=\omega">-axis, which is the photon energy axis, the form is fixed <img src="https://render.githubusercontent.com/render/math?math=\|(L_{N_w}\otimes I)X\|_2^2"> where <img src="https://render.githubusercontent.com/render/math?math=L_{N_w}"> is the laplacian. Roughness along the second axis of X is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
+
+Sparsity and Smoothness are enforced through penalties in this package, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth` in the total objective function.
 
 ## Solvers
 
