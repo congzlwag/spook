@@ -89,8 +89,10 @@ def iso_struct(csc_mata, csc_matb):
     """
     if csc_mata.shape != csc_matb.shape:
         return False
-    res = (csc_mata.indices == csc_matb.indices).all() 
-    res = res and (csc_mata.indptr == csc_matb.indptr).all()
+    res = (csc_mata.indices == csc_matb.indices)
+    if not isinstance(res, np.ndarray) and res == False:
+        return False
+    res = res.all() and (csc_mata.indptr == csc_matb.indptr).all()
     return res
 
 def normalizedATA(A):
