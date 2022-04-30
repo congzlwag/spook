@@ -19,12 +19,12 @@ Sparsity and Smoothness are enforced through penalties in the total obejctive fu
 
 ## Solvers
 
-Different combinations of regularizations can lead to different forms of objective function. Solvers in package always formalize the specific problem into either a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) or a linear equation. 
+Different combinations of regularizations can lead to different forms of objective function. Solvers in package always formalize the specific problem into either a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) or a linear equation. Examples can be found in [unit tests](#UnitTests) 
 
 | Nonnegativity | Sparsity            | Smoothness | Solver              | Notes                                                        |
 | ------------- | ------------------- | ---------- | ------------------- | ------------------------------------------------------------ |
 | True          | L1 or False         | Quadratic  | `SpookPosL1`        | This solver can serve tasks like in [Li _et al_](https://iopscience.iop.org/article/10.1088/1361-6455/abcdf1) |
-| True          | L2 squared          | Quadratic  | Not implemented yet |                                                              |
+| True          | L2 squared          | Quadratic  | `SpookPosL2` |                                                              |
 | False         | L2 squared or False | Quadratic  | `SpookLinSolve`     | This solver is so far the work-horse for SpookVMI            |
 | False         | L1                  | Quadratic  | Not implemented yet |                                                              |
 
@@ -55,7 +55,7 @@ The entries in B are not always accessible, because of the option to pass in pre
 ## Unit Tests
 
 `unittest/testPosL1.py` is a good example to play with `SpookPosL1`.
-
+`unittest/testPosL1L2.ipynb` include good examples to play with `SpookPosL1` and `SpookPosL2`.
 
 
 ## Dependencies
