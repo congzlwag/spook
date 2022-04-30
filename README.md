@@ -55,7 +55,7 @@ The entries in B are not always accessible, because of the option to pass in pre
 ## Unit Tests
 
 `unittest/testPosL1.py` is a good example to play with `SpookPosL1`.
-`unittest/testPosL1L2.ipynb` include good examples to play with `SpookPosL1` and `SpookPosL2`.
+`unittest/testL1L2.ipynb` include good examples to play with `SpookPosL1`, `SpookPosL2`, and `SpookL1`.
 
 
 ## Dependencies
