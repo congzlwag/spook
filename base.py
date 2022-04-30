@@ -233,6 +233,11 @@ class SpookBase:
         #     return rl2 * self.AGscale
         return rl2
 
+    def sparsity(self, X=None):
+        if X is None:
+            X = self.res
+        return self.__spfunc(X)
+
     def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
         assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."
         res = np.zeros((len(lsparse_list),3))
@@ -252,13 +257,6 @@ class SpookBase:
         rr = np.asarray([s(ll) for s in spls])
         tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
         qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
-        # Numerical Diff
-        # dl = np.ptp(ll) / (ll.size-1)
-        # rr = np.asarray([s(ll) for s in spls])
-        # tt = np.diff(rr, axis=1) / dl 
-        # tt = 0.5*(tt[:,1:]+tt[:,:-1]) # tangent vector
-        # qq = np.diff(rr, n=2, axis=1) / (dl**2)
-        # print(tt.shape, qq.shape)
         kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
         ss = np.linalg.norm(tt, axis=0).ravel()
         kk /= ss**3 # curvature

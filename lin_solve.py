@@ -30,6 +30,7 @@ class SpookLinSolve(SpookBase):
         # if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
         #     self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
         self.setupProb()
+        self.__spfunc = lambda X: (X**2).sum()
 
     def setupProb(self):
         need_to_flatten = (self._GtG is not None) or self.lsmooth[1]!=0
@@ -82,11 +83,6 @@ class SpookLinSolve(SpookBase):
         else:
             self.res = spsolve(self.P, self.qhalf)
 
-    def sparsity(self, X=None):
-        if X is None:
-            X = self.res
-        X = X.ravel()
-        return np.linalg.norm(X)
 
 if __name__ == '__main__':
     np.random.seed(1996)
