@@ -1,5 +1,6 @@
 import numpy as np
 from .lin_solve import SpookLinSolve
+from .quad_program import SpookL1
 import scipy.sparse as sps
 from .utils import laplacian_square_S, dict_innerprod
 import os
@@ -25,7 +26,9 @@ class PhotonFreqResVMI:
 	Keyword arguments
 		spook_kwargs: kwargs that will be directly passed to SpookLinSolve
 	"""
-	def __init__(self, vls_spec_dict, processed_quad_dict, gData, precontractedData=None, alpha_vmi=1, pxWeights=None, **spook_kwargs):
+	def __init__(self, vls_spec_dict, processed_quad_dict, gData, 
+		         precontractedData=None, alpha_vmi=1, pxWeights=None, 
+		         sparsity="L2", **spook_kwargs):
 		if precontractedData is not None:
 			dat = precontractedData
 			A = dat['A'] # This A is preferably in full range, but the cropped one is fine.
@@ -87,7 +90,13 @@ class PhotonFreqResVMI:
 
 		print(r"Tensor shapes: (A \otimes G).T@B, AtA, GtG, rsmoother")
 		print(AtBG.shape, AtA.shape, GtG.shape, rsmoother.shape)
-		self.__spook = SpookLinSolve(AtBG, AtA, 'contracted', GtG, Bsmoother=rsmoother, **spook_kwargs)
+		if sparsity == 'L2':
+			SpkCls = SpookLinSolve
+		elif sparsity == 'L1':
+			SpkCls = SpookL1
+		else:
+			raise ValueError("Unrecognized sparisty input: %s"%sparsity)
+		self.__spook = SpkCls(AtBG, AtA, 'contracted', GtG, Bsmoother=rsmoother, **spook_kwargs)
 		self.__gData = gData
 		self._alpha = alpha_vmi 
 		self.__vlsAxisInPX = np.arange(A.shape[1])[bounds[0]:bounds[1]]
