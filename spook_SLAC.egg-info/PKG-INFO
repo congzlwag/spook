@@ -1,3 +1,20 @@
+Metadata-Version: 2.1
+Name: spook-SLAC
+Version: 0.5
+Summary: A package for frequency-domain ghost imaging
+Home-page: https://github.com/congzlwag/spook
+Author: Jun Wang
+Author-email: junwang9@stanford.edu
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/congzlwag/spook/issues
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
 # Spooktroscopy: Frequency-Domain Ghost Imaging
 
 ## Target Problem
@@ -65,3 +82,5 @@ See `requirements.txt`
 This work was supported by the U.S. Department of Energy (DOE), Office of Science, Office of Basic Energy Sciences (BES), Chemical Sciences, Geosciences, and Biosciences Division (CSGB).
 
 test
+
+

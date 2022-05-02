@@ -1,0 +1,14 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+./spook/__init__.py
+./spook/base.py
+./spook/lin_solve.py
+./spook/quad_program.py
+./spook/utils.py
+./spook/vmi_special.py
+spook_SLAC.egg-info/PKG-INFO
+spook_SLAC.egg-info/SOURCES.txt
+spook_SLAC.egg-info/dependency_links.txt
+spook_SLAC.egg-info/top_level.txt
