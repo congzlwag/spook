@@ -30,7 +30,7 @@ class SpookLinSolve(SpookBase):
         # if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
         #     self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
         self.setupProb()
-        self.__spfunc = lambda X: (X**2).sum()
+        self._spfunc = lambda X: (X**2).sum()
 
     def setupProb(self):
         need_to_flatten = (self._GtG is not None) or self.lsmooth[1]!=0

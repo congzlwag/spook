@@ -236,7 +236,7 @@ class SpookBase:
     def sparsity(self, X=None):
         if X is None:
             X = self.res
-        return self.__spfunc(X)
+        return self._spfunc(X)
 
     def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
         assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."

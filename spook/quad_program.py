@@ -115,7 +115,7 @@ class SpookPosL1(SpookPos):
         Upper triangular part of self._P is used in OSQP.setup(), 
         regardless of whether self._P is dense or sparse
         """
-        self.__spfunc = lambda X: abs(X).sum()
+        self._spfunc = lambda X: abs(X).sum()
         I, lb, ub = SpookPos.setupProb(self)
         P = self._P # calculated in SpookPos.__init__
         self._prob.setup(P, self._qhalf + 0.5*self.lsparse, I, lb, ub, verbose=False)
@@ -159,7 +159,7 @@ class SpookPosL2(SpookPos):
         Upper triangular part of self._P is used in OSQP.setup(), 
         regardless of whether self._P is dense or sparse
         """
-        self.__spfunc = lambda X: (X**2).sum()
+        self._spfunc = lambda X: (X**2).sum()
         I, lb, ub = SpookPos.setupProb(self)
         P = self._P # calculated in SpookPos.__init__
         self._prob.setup(P, self._qhalf, I, lb, ub, verbose=False)
@@ -197,7 +197,7 @@ class SpookL1(SpookQPBase):
         Upper triangular part of self._P is used in OSQP.setup(), 
         regardless of whether self._P is dense or sparse
         """
-        self.__spfunc = lambda X: abs(X).sum()
+        self._spfunc = lambda X: abs(X).sum()
         if self.verbose: print("Setting up the OSQP problem")
         if hasattr(self, "_prob"):
             del self._prob
