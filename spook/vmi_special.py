@@ -128,4 +128,7 @@ class PhotonFreqResVMI:
 	@property
 	def vlsAxis_px(self):
 		return self.__vlsAxisInPX
+
+	def getspook(self):
+		return self.__spook
 	

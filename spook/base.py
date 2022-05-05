@@ -238,6 +238,15 @@ class SpookBase:
             X = self.res
         return self._spfunc(X)
 
+    def accumulate(self, AtA_batch, Bcontracted_batch):
+        assert (self.__Ascale, self.__Gscale) == (1,1), "Don't accumulate on normalized spook instance"
+        assert AtA_batch.shape == self._AtA.shape
+        assert Bcontracted_batch.shape == self._Bcontracted.shape
+        self._AtA += AtA_batch
+        self._Bcontracted += Bcontracted_batch
+        if hasattr(self, "_AGtAG"):
+            del self._AGtAG # Clear cache
+
     def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
         assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."
         res = np.zeros((len(lsparse_list),3))
@@ -271,6 +280,7 @@ class SpookBase:
         print(curv_dat[idM,0])
         self.solve(10**(curv_dat[idM,0]), None)
         return res, curv_dat
+
         
 if __name__ == '__main__':
     np.random.seed(1996)
