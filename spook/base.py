@@ -3,7 +3,8 @@
 """
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
-from .utils import dict_innerprod, dict_allsqsum, show_lcurve
+from .utils import dict_innerprod, dict_allsqsum
+from .utils import calcL2fromContracted, show_lcurve
 import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import interp1d
@@ -214,12 +215,6 @@ class SpookBase:
         With A & G normalized
         """
         Xo = self.res.reshape((self.Na, -1))
-        quad = Xo.T @ self._AtA @ Xo
-        if self._GtG is None:
-            quad = np.trace(quad)
-        else:
-            quad = np.trace(quad @ self._GtG)
-        lin = -2 * np.trace(Xo.T @ self._Bcontracted) # This covered the contraction with G
         if hasattr(self, "_TrBtB") and self._TrBtB > 0: # Then this is tr(B.T @ B) / scalefactor
             const = self._TrBtB
         elif Tr_BtB is not None:
@@ -227,8 +222,7 @@ class SpookBase:
             const = Tr_BtB
         else:
             raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
-        if self.verbose: print("Terms in |residue|_2^2: quad=%.1g, lin=%.1g, const=%.1g"%(quad, lin, const))
-        rl2 = (max(quad+lin+const,0))**0.5
+        rl2 = calcL2fromContracted(Xo, self._AtA, self._Bcontracted, const, self._GtG)
         # if not normalized: # back to the original scale
         #     return rl2 * self.AGscale
         return rl2
