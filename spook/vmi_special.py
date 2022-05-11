@@ -50,7 +50,7 @@ class PhotonFreqResVMI:
 			elif AtQuad.shape[0] != bounds[1]-bounds[0]:
 				raise ValueError("Info loss in AtQuad: AtQuad.shape[0]=%d is neither ptp(bounds)=%d or A.shape[1]=%d."%(AtQuad.shape[0],bounds[1]-bounds[0],Na_full)
 								+"Please verify precontractedData[vlsbounds] is properly set.")
-			if AtA.shape[0] != AtQuad.shape[0]:
+			if AtA.shape[0] != AtQuad.shape[0]: # redo AtA contraction
 				A1 = A[:,bounds[0]:bounds[1]]
 				AtA = A1.T @ A1
 		else:

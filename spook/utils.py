@@ -164,3 +164,8 @@ def show_lcurve(log_scan_results, curv_dat, plot):
     ax3.plot(curv_dat[idM,0],curv_dat[idM,4], "r+")
     fig.tight_layout()
     return fig, idM
+
+def poisson_nll(pred, data):
+    assert pred.shape == data.shape
+    msk = data > 0
+    return -(data[msk] * np.log(pred[msk])).sum() + pred.sum()
