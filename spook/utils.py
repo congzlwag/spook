@@ -164,3 +164,23 @@ def show_lcurve(log_scan_results, curv_dat, plot):
     ax3.plot(curv_dat[idM,0],curv_dat[idM,4], "r+")
     fig.tight_layout()
     return fig, idM
+
+def poisson_nll(pred, data):
+    assert pred.shape == data.shape
+    msk = data > 0
+    pred_msk = pred[msk]
+    return -(data[msk] * np.log(pred_msk)).sum() + pred_msk.sum()
+
+def soft_poisson_nll(pred, data, p=0.01):
+    assert pred.shape == data.shape
+    data = data.ravel()
+    msk = data > 0
+    pred = pred.ravel()[msk]
+    data = data[msk]
+    pois_msk = pred > p
+    gaus_msk = pred <=p
+    ret = np.zeros_like(pred)
+    ret[pois_msk] = pred[pois_msk] - data[pois_msk] * np.log(pred[pois_msk])
+    x = data[gaus_msk]
+    ret[gaus_msk] = ((pred[gaus_msk] - x)**2 - (p-x)**2)/(2*p) + p - x*np.log(p)
+    return ret.sum()
