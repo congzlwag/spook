@@ -123,14 +123,14 @@ def comboNormalize(A, B, return_scalefactors=False):
         return AtA, AtB, scaleA, scaleB
     return AtA, AtB
 
-def calcL2fromContracted(X, AtA, Bcontracted, trBtB, GtG=None):
+def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
     quad = Xo.T @ AtA @ Xo
     if GtG is None:
         quad = np.trace(quad)
     else:
         quad = np.trace(quad @ GtG)
     lin = -2 * np.trace(Xo.T @ Bcontracted) # This covered the contraction with G
-    const = Tr_BtB
+    const = trBtB
     rl2 = (max(quad+lin+const,0))**0.5
     # if not normalized: # back to the original scale
     #     return rl2 * self.AGscale
