@@ -69,12 +69,6 @@ class SpookPos(SpookQPBase):
     Nonnegativity constraint
     Definitely a Quadratic Program
     """
-    
-    # def calcPtriu(self):
-    #     """
-    #     Calculate the upper triangle part of the P matrix
-    #     """
-    #     return self._Pcore
 
     def setupProb(self):
         """
