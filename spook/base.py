@@ -5,6 +5,7 @@ import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
 from .utils import dict_innerprod, dict_allsqsum
 from .utils import calcL2fromContracted, show_lcurve
+from .utils import count_delaybin
 import  scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import interp1d
@@ -28,8 +29,7 @@ class SpookBase:
         :param Bsmoother: the quadratic matrix for smoothness
         :param pre_normalize: whether or not to normalize ATA, GTG
         """
-        if not (mode in ['raw', 'contracted']):
-            raise ValueError("Unknown mode: %s. Must be either 'raw' or 'contracted'"%mode)
+        assert (mode in ['raw', 'contracted', 'projective']), "Unknown mode: %s. Must be either 'raw' or 'contracted' of 'projective"%mode
 
         # Make sure the class eventually stores AtA, GtG and (At otimes Gt)B
         # All these are presumably dense, especially A, if not, crop in.
@@ -43,7 +43,7 @@ class SpookBase:
             self._GtG = G
             assert A.shape[0] == B.shape[0] and (G is None or B.shape[1]==G.shape[1])
             self._TrBtB = 0
-        else:
+        elif mode == 'raw':
             B_is_dict = False
             if isinstance(B, np.ndarray):
                 assert A.ndim==2 and (B.ndim in [1,2]) and (G is None or G.ndim==2)
@@ -85,7 +85,22 @@ class SpookBase:
                 self._Bcontracted = self._Bcontracted @ G
             self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
             self._GtG = None if G is None else G.T @ G
-#             print("__Ascale =", (np.trace(self._AtA) / (self._AtA.shape[1]))**0.5)
+#             print("__Ascale =", (np.trace(self._AtA) / (self._AtA.shape[1]))**0.5) 
+        else:
+            assert G is None, "Non-trivial G is not supported for projective mode right now"
+            assert isinstance(B, list), "B should be a list of (delay_bin_index, yield)"
+            Nt = count_delaybin(B)
+            Na = len(A[0])
+            AEtAE = np.zeros((Na, Nt, Na, Nt), dtype='d')
+            AEtBE = np.zeros((Na, Nt), dtype='d')
+            for (ti, yi), ai in zip(B, A):
+                AEtAE[:, ti, :, ti] += ai[:, None] @ ai[None, :]
+                AEtBE[:, ti] += ai * yi
+            self._AtA = None # This will serve as the indicator that we are in projective mode
+            self._GtG = None
+            self.__Na = Na
+            self._AGtAG = AEtAE.reshape((Na*Nt, Na*Nt))
+            self._Bcontracted = AEtBE
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
@@ -103,6 +118,8 @@ class SpookBase:
 
     @property
     def Na(self):
+        if self._AtA is None:
+            return self.__Na
         return self._AtA.shape[0]
 
     @property
@@ -167,7 +184,7 @@ class SpookBase:
     def normalizeAG(self, pre_normalize):
         if not pre_normalize:
             self.__Ascale, self.__Gscale = (1,1)
-        else:
+        elif self._AtA is not None:
             scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
             # Actual normalization happens here
             self._AtA /= scaleA2
@@ -184,8 +201,12 @@ class SpookBase:
                 self._GtG /= scaleG2
             self.__Gscale = scaleG2**0.5
             # Actual normalization happens here
-            self._Bcontracted /= self.AGscale
-            # self._TrBtB /= (scaleA2*scaleG2)
+        else:
+            scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
+            self._AGtAG /= scaleAG2
+            self.__Ascale = scaleAG2**0.5
+            self.__Gscale = 1
+        self._Bcontracted /= self.AGscale
 
     @property
     def AGscale(self):
