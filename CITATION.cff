@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "This package is under MIT-license. If you use this software, please cite it as below."
+authors:
+  - family-names: Wang
+    given-names: Jun
+    orcid: https://orcid.org/0000-0003-1962-895X
+title: "Spook - A package of spectral-domain ghost imaging implementations"
+version: 0.5
+doi: 
+date-released: 2022-05-01
