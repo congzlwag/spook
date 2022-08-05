@@ -172,11 +172,17 @@ def poisson_nll(pred, data):
     return -(data[msk] * np.log(pred_msk)).sum() + pred_msk.sum()
 
 def soft_poisson_nll(pred, data, p=0.01):
-    assert pred.shape == data.shape
-    data = data.ravel()
-    msk = data > 0
+    if sps.issparse(data):
+        assert pred.size == np.prod(data.shape)
+        data = data.tocoo().reshape((1,-1))
+        msk = data.col[data.data>0]
+        data = data.data[data.data>0]
+    else:
+        assert pred.shape == data.shape
+        data = data.ravel()
+        msk = data > 0
+        data = data[msk]
     pred = pred.ravel()[msk]
-    data = data[msk]
     pois_msk = pred > p
     gaus_msk = pred <=p
     ret = np.zeros_like(pred)
