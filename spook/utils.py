@@ -123,6 +123,10 @@ def comboNormalize(A, B, return_scalefactors=False):
         return AtA, AtB, scaleA, scaleB
     return AtA, AtB
 
+def count_delaybin(Blist):
+    tlist = [t for t, b in Blist]
+    return max(tlist)  - min(tlist) + 1
+
 def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
     quad = Xo.T @ AtA @ Xo
     if GtG is None:
