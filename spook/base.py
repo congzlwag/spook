@@ -22,7 +22,7 @@ class SpookBase:
     smoothness_drop_boundaries = True
     verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
-        Bsmoother="laplacian", pre_normalize=True):
+        Bsmoother="laplacian", Asmoother="laplacian", pre_normalize=True):
         """
         :param mode: "raw" or "contracted"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
@@ -107,10 +107,12 @@ class SpookBase:
         # self._Na = self._AtA.shape[0]
         if self._GtG is not None and worth_sparsify(self._GtG):
             self._GtG = sps.coo_matrix(self._GtG)
-        self._La2 = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
-        self._Bsm = Bsmoother
+        # self._La2 = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
+        self._Bsm, self._Asm = Bsmoother, Asmoother
         if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
             self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
+        if isinstance(Asmoother, str) and Asmoother == "laplacian":
+            self._Asm = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
 
         self.normalizeAG(pre_normalize)
 #         print("At the end of __init__, __Ascale =", self.__Ascale)

@@ -17,12 +17,12 @@ class SpookLinSolve(SpookBase):
     # Dominant time complexity comes from linsolve, caching AGtAG is not 
     # really helpful, so I make it optional.
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
-        Bsmoother="laplacian", **kwargs):
+        **kwargs):
         if 'cache_AGtAG' in kwargs:
             self._cache_AGtAG = kwargs['cache_AGtAG']
             del kwargs['cache_AGtAG']
         SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, 
-            Bsmoother=Bsmoother, **kwargs)
+            **kwargs)
         # self._Ng = self.shape['Ng']
         # L = laplacian1D_S(self._Na)
         # self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
@@ -50,7 +50,7 @@ class SpookLinSolve(SpookBase):
     def __setupProbFlat(self):
         # print("Set up a flattened problem")
         self.qhalf = self._Bcontracted.ravel()
-        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2 
+        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._Asm 
         self.P = sps.kron(self.P, sps.eye(self.Ng))
         tmp = self.AGtAG # The base class' AGtAG first look for attr:_AGtAG
         self.P += tmp    # So _AGtAG will be automatically reused if cached
