@@ -40,7 +40,7 @@ class SpookLinSolve(SpookBase):
             self.__setupProbVec()
 
     def __setupProbVec(self):
-        # print("Set up a vectorized problem")
+        if self.verbose: print("Set up a vectorized problem")
         assert self._GtG is None and self.lsmooth[1]==0
         self.qhalf = self._Bcontracted
         self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2
