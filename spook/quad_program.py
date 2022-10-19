@@ -10,9 +10,9 @@ from .utils import iso_struct
 class SpookQPBase(SpookBase):
     verbose = False
     def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1), 
-        Bsmoother="laplacian", **kwargs):
+        **kwargs):
         SpookBase.__init__(self, B, A, mode=mode, G=G, 
-            lsparse=lsparse, lsmooth=lsmooth, Bsmoother=Bsmoother, **kwargs)
+            lsparse=lsparse, lsmooth=lsmooth, **kwargs)
         
         self._Pcore = sps.triu(self.AGtAG, 0, "csc")
         self._qhalf = - self._Bcontracted.ravel()
@@ -36,7 +36,7 @@ class SpookQPBase(SpookBase):
             so DON'T use if the solver is vectorized over dimension b
         """
         Ig = sps.eye(self.Ng)
-        temp = sps.kron(self.lsmooth[0] * sps.triu(self._La2), Ig)
+        temp = sps.kron(self.lsmooth[0] * sps.triu(self._Asm), Ig)
         temp += sps.kron(sps.eye(self.Na), self.lsmooth[1] * sps.triu(self._Bsm))
         return temp.tocsc()
 
