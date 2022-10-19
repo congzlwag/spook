@@ -43,14 +43,14 @@ class SpookLinSolve(SpookBase):
         # print("Set up a vectorized problem")
         assert self._GtG is None and self.lsmooth[1]==0
         self.qhalf = self._Bcontracted
-        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._La2
+        self.P = self.lsparse * sps.eye(self.Na) + self.Asm()
         self.P += self._AtA
 
     # @profile
     def __setupProbFlat(self):
         # print("Set up a flattened problem")
         self.qhalf = self._Bcontracted.ravel()
-        self.P = self.lsparse * sps.eye(self.Na) + self.lsmooth[0] * self._Asm 
+        self.P = self.lsparse * sps.eye(self.Na) + self.Asm()
         self.P = sps.kron(self.P, sps.eye(self.Ng))
         tmp = self.AGtAG # The base class' AGtAG first look for attr:_AGtAG
         self.P += tmp    # So _AGtAG will be automatically reused if cached

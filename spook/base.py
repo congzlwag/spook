@@ -3,10 +3,11 @@
 """
 import numpy as np
 from .utils import worth_sparsify, laplacian_square_S
-from .utils import dict_innerprod, dict_allsqsum
+# from .utils import dict_allsqsum #dict_innerprod, 
+from .contraction_utils import adaptive_contraction, allsqsum, adaptive_dot
 from .utils import calcL2fromContracted, show_lcurve
-from .utils import count_delaybin
-import  scipy.sparse as sps
+from .utils import count_delaybin, eval_Ng, eval_Nw
+import scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import interp1d
 
@@ -15,92 +16,77 @@ class SpookBase:
     Base class for Spooktroscopy
     Simply pseudoinverse the core problem
     (A otimes G) X = B
-    A is specifically photon spectra, shaped (#shot, Nw)
-    B is a <=2d data (#shot, Nb)
-    G is an optional operator on the dimension Nb
+    A is shot-dependent (#shot, Na)
+    B is a <=2d array (#shot, Nb)
+    G is a shot-independent optional operator on the dimension Nb
     """
     smoothness_drop_boundaries = True
     verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
         Bsmoother="laplacian", Asmoother="laplacian", pre_normalize=True):
         """
-        :param mode: "raw" or "contracted"
+        :param mode: "raw" or "contracted" (recommended) or "ADraw"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
         :param Bsmoother: the quadratic matrix for smoothness
         :param pre_normalize: whether or not to normalize ATA, GTG
         """
-        assert (mode in ['raw', 'contracted', 'projective']), "Unknown mode: %s. Must be either 'raw' or 'contracted' of 'projective"%mode
+        assert (mode in ['raw', 'contracted', 'ADraw']), f"Unknown mode: {mode}. Must be either 'raw' or 'contracted' or 'ADraw'"
 
         # Make sure the class eventually stores AtA, GtG and (At otimes Gt)B
         # All these are presumably dense, especially A, if not, crop in.
         if mode == 'contracted':
             assert isinstance(B, np.ndarray), "B has to be a numpy array in contracted mode"
-            assert B.ndim in [1,2], "B.ndim has to be 1 or 2"
-            if B.ndim == 1:
-                B.reshape((-1,1))
+            assert isinstance(A, np.ndarray), "A has to be a numpy array in contracted mode"
+            assert B.ndim in [1,2,3], "B.ndim has to be in [1,2,3]"
+            assert A.ndim in [2,4], "A.ndim has to be in [2,4]"
+            self.__NaTuple = A.shape[:A.ndim//2]
+            Na = np.prod(self.__NaTuple)
+            A.shape = (Na,-1)
+            B.shape = (Na,-1)
             self._AtA = A
             self._Bcontracted = B
             self._GtG = G
-            assert A.shape[0] == B.shape[0] and (G is None or B.shape[1]==G.shape[1])
-            self._TrBtB = 0
+            if G is not None:
+                assert (B.shape[-1]==G.shape[-1]), f"Shape mismatch: " + \
+                "In contracted mode, B & G should have the same dimension at axis=-1, but B.shape={B.shape} while G.shape={G.shape}"
         elif mode == 'raw':
-            B_is_dict = False
-            if isinstance(B, np.ndarray):
-                assert A.ndim==2 and (B.ndim in [1,2]) and (G is None or G.ndim==2)
-                if B.ndim == 1:
-                    B = B.reshape((-1,1))
-                Ns, Na = A.shape
-                Nb = B.shape[1]
-                self._TrBtB = np.trace(B.T @ B)
-            elif isinstance(B, dict):
-                assert isinstance(A, dict), "When B is a dict, A has to be a dict too."
-                keys = list(A.keys())
-                Ns = len(keys)
-                Na = A[keys[0]].size
-                Nb = B[keys[0]].size
-                B_is_dict = True
-                self._TrBtB = dict_allsqsum(B)
-            else:
-                raise TypeError("B can only be either a dict or an array") 
-            assert Ns == (len(B))
-            Ng = Nb if G is None else G.shape[1]
-            assert (G is None or Nb == G.shape[0])
-            # Simply precontract over Ns When G is None
-            # But otherwise one need to ponder on the ordering
-            # of Ns vs Nb contraction
-            if Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb) and G is not None:
-                if B_is_dict:
-                    GtB = {}
-                    for ky,b in B.items():
-                        GtB[ky] = b.ravel() @ G
-                else:
-                    GtB = B @ G
-                B = GtB
-            if B_is_dict:
-                self._Bcontracted = dict_innerprod(A, B)
-            else:
-                self._Bcontracted = A.T @ B
-            if not (Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb)) and G is not None:
-                print("Contract with G after A.T@B")
-                self._Bcontracted = self._Bcontracted @ G
-            self._AtA = dict_innerprod(A, A) if B_is_dict else A.T @ A
+            AtA = adaptive_contraction(A, A, keep_dims=True)
+            self.__NaTuple = AtA.shape[:AtA.ndim//2]
+            Na = np.prod(self.__NaTuple)
+            AtA.shape = (Na,-1)
+            # if Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb) and G is not None:
+            # contracting BG first is more efficient, but I'll leave it out of this raw mode
+            # because an expert should use the contracted mode
+            AtB = adaptive_contraction(A, B, keep_dims=False)
+            AtB.shape = (Na,-1)
+            self._Bcontracted = AtB @ G if G is not None else AtB
+            self._TrBtB = allsqsum(B)
+            self._AtA = AtA
             self._GtG = None if G is None else G.T @ G
-#             print("__Ascale =", (np.trace(self._AtA) / (self._AtA.shape[1]))**0.5) 
-        else:
-            assert G is None, "Non-trivial G is not supported for projective mode right now"
-            assert isinstance(B, list), "B should be a list of (delay_bin_index, yield)"
-            Nt = count_delaybin(B)
-            Na = len(A[0])
-            AEtAE = np.zeros((Na, Nt, Na, Nt), dtype='d')
-            AEtBE = np.zeros((Na, Nt), dtype='d')
-            for (ti, yi), ai in zip(B, A):
+        else: # 'mode'=='ADraw'
+            assert isinstance(A, list) or isinstance(A, dict), "A should be a list or dict of (photon_spec, delay_bin_index) or (photon_spec, delay_wavelet)"
+            Nt = count_delaybin(A)
+            Nw = eval_Nw(A)
+            self.__NaTuple = (Nw, Nt)
+            BG = B if G is None else adaptive_dot(B, G)
+            self._GtG = None if G is None else G.T @ G
+            AEtAE = np.zeros((Nw, Nt, Nw, Nt), dtype='d')
+            AEtBG = np.zeros((Nw, Nt, eval_Ng(BG)), dtype='d')
+            if isinstance(A, list):
+                iiter = np.arange(len(A))
+            else:
+                iiter = list(A.keys())
+            for i in iiter:
+                ai, ti = A[i]
+                bi = BG[i]
+                if sps.issparse(bi):
+                    bi = bi.toarray().ravel()
+                else:
+                    bi = np.atleast_1d(bi)
                 AEtAE[:, ti, :, ti] += ai[:, None] @ ai[None, :]
-                AEtBE[:, ti] += ai * yi
-            self._AtA = None # This will serve as the indicator that we are in projective mode
-            self._GtG = None
-            self.__Na = Na
-            self._AGtAG = AEtAE.reshape((Na*Nt, Na*Nt))
-            self._Bcontracted = AEtBE
+                AEtBG[:, ti, :] += ai[:, None] @ bi[None, :]
+            self._AtA = AEtAE.reshape(Nw*Nt,-1)
+            self._Bcontracted = AEtBG.reshape(Nw*Nt,-1)
 
         self.lsparse = lsparse
         self.lsmooth = lsmooth
@@ -112,24 +98,38 @@ class SpookBase:
         if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
             self._Bsm = laplacian_square_S(self.Ng, self.smoothness_drop_boundaries)
         if isinstance(Asmoother, str) and Asmoother == "laplacian":
-            self._Asm = laplacian_square_S(self.Na, self.smoothness_drop_boundaries)
-
+            self._Asm = laplacian_square_S(self.NaTuple[0], self.smoothness_drop_boundaries)
+        if len(self.NaTuple) > 1:
+            assert len(self.NaTuple) == 2
+            assert len(self.lsmooth) == 3, "The dataset has a delay axis. Please assign lsmooth=(lsm_w, lsm_g, lsm_t)"
+            self._Tsm = laplacian_square_S(self.NaTuple[1], self.smoothness_drop_boundaries)
+            self._Tsm = sps.kron(sps.eye(self.NaTuple[0]), self._Tsm)
+            self._Asm = sps.kron(self._Asm, sps.eye(self.NaTuple[1]))
         self.normalizeAG(pre_normalize)
 #         print("At the end of __init__, __Ascale =", self.__Ascale)
 
 
     @property
     def Na(self):
-        if self._AtA is None:
-            return self.__Na
-        return self._AtA.shape[0]
+        # if self._AtA is None:
+        #     return self.__Na
+        return np.prod(self.__NaTuple)
+
+    @property
+    def NaTuple(self):
+        return self.__NaTuple
 
     @property
     def Ng(self):
         if self._GtG is None:
-            return self._Bcontracted.shape[1] 
-        return self._GtG.shape[1]
+            return self._Bcontracted.shape[-1] 
+        return self._GtG.shape[-1]
 
+    def Asm(self):
+        temp = self.lsmooth[0] * self._Asm 
+        if hasattr(self, "_Tsm"):
+            temp += self.lsmooth[2] * self._Tsm
+        return temp
     # @property
     # def shape(self):
     #     ret = {"Na": self._Na, "Ng": self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
@@ -157,7 +157,7 @@ class SpookBase:
         if updated and self.verbose: print("Updated")
         if updated or not hasattr(self,'res'):
             self.solve(None, None)
-        return self.res.reshape((self.Na, -1)) / self.AGscale
+        return self.res.reshape((*(self.NaTuple), -1)) / self.AGscale
         # Xo /= (self.__Ascale*self.__Gscale)
         # return Xo
 
@@ -238,7 +238,7 @@ class SpookBase:
         With A & G normalized
         """
         Xo = self.res.reshape((self.Na, -1))
-        if hasattr(self, "_TrBtB") and self._TrBtB > 0: # Then this is tr(B.T @ B) / scalefactor
+        if hasattr(self, "_TrBtB") and self._TrBtB is not None: # Then this is tr(B.T @ B) / scalefactor
             const = self._TrBtB
         elif Tr_BtB is not None:
             self._TrBtB = Tr_BtB
