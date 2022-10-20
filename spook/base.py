@@ -68,6 +68,7 @@ class SpookBase:
             Nt = count_delaybin(A)
             Nw = eval_Nw(A)
             self.__NaTuple = (Nw, Nt)
+            self._TrBtB = allsqsum(B)
             BG = B if G is None else adaptive_dot(B, G)
             self._GtG = None if G is None else G.T @ G
             AEtAE = np.zeros((Nw, Nt, Nw, Nt), dtype='d')
@@ -226,10 +227,10 @@ class SpookBase:
         if hasattr(self, "_AGtAG"):
             return self._AGtAG
         GtG = sps.eye(self.Ng) if self._GtG is None else self._GtG
-        if isinstance(GtG, np.ndarray):
-            return np.kron(self._AtA, GtG)
-        else:
-            return sps.kron(self._AtA, GtG)
+        # if isinstance(GtG, np.ndarray):
+        #     return np.kron(self._AtA, GtG)
+        # else:
+        return sps.kron(self._AtA, GtG)
 
     def residueL2(self, Tr_BtB=None):
         """
