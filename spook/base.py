@@ -227,10 +227,10 @@ class SpookBase:
         if hasattr(self, "_AGtAG"):
             return self._AGtAG
         GtG = sps.eye(self.Ng) if self._GtG is None else self._GtG
-        # if isinstance(GtG, np.ndarray):
-        #     return np.kron(self._AtA, GtG)
-        # else:
-        return sps.kron(self._AtA, GtG)
+        if isinstance(GtG, np.ndarray):
+            return np.kron(self._AtA, GtG)
+        else:
+            return sps.kron(self._AtA, GtG)
 
     def residueL2(self, Tr_BtB=None):
         """
