@@ -36,7 +36,7 @@ class SpookQPBase(SpookBase):
             so DON'T use if the solver is vectorized over dimension b
         """
         Ig = sps.eye(self.Ng)
-        temp = sps.kron(self.lsmooth[0] * sps.triu(self._Asm), Ig)
+        temp = sps.kron(self.Asm(), Ig)
         temp += sps.kron(sps.eye(self.Na), self.lsmooth[1] * sps.triu(self._Bsm))
         return temp.tocsc()
 
