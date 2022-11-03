@@ -34,6 +34,8 @@ class SpookBase:
 
         # Make sure the class eventually stores AtA, GtG and (At otimes Gt)B
         # All these are presumably dense, especially A, if not, crop in.
+        if isinstance(B, np.ndarray) and B.ndim==1:
+            B = B[:, None]
         if mode == 'contracted':
             assert isinstance(B, np.ndarray), "B has to be a numpy array in contracted mode"
             assert isinstance(A, np.ndarray), "A has to be a numpy array in contracted mode"

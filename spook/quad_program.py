@@ -93,6 +93,19 @@ class SpookQPBase(SpookBase):
         else:
             return - self._Bcontracted[...,col].ravel()
 
+    def update_lsmooth(self, lsmooth):
+        assert len(lsmooth) == len(self.NaTuple)+1
+        self.lsmooth = lsmooth
+        if hasattr(self, '_probs') and lsmooth[1]!=0:
+            if self.verbose: print("Resetting problem to be flattened")
+            del self._probs
+            self._Pcore = sps.triu(self.AGtAG, 0, "csc")
+            self._P = self.calcPtriu()
+            self._prob = self.setupProb()
+        else:
+            Pnew = self.calcPtriu()
+            self._update_Pmat(Pnew) 
+
 class SpookPos(SpookQPBase):
     """
     Nonnegativity constraint
@@ -162,10 +175,10 @@ class SpookPosL1(SpookPos):
                 prob.update(q = qhalf + 0.5*self.lsparse)
         if self.verbose: print("Sparsity hyperparam updated.")
 
-    def update_lsmooth(self, lsmooth):
-        self.lsmooth = lsmooth
-        Pnew = self.calcPtriu()
-        self._update_Pmat(Pnew)
+    # def update_lsmooth(self, lsmooth):
+    #     self.lsmooth = lsmooth
+    #     Pnew = self.calcPtriu()
+    #     self._update_Pmat(Pnew)
 
     # def sparsity(self, X=None):
     #     if X is None:
@@ -184,7 +197,7 @@ class SpookPosL2(SpookPos):
         retP += (sps.eye(self._Pcore.shape[0])*self.lsparse).tocsc()
         return retP
 
-    def setupProb(self, col):
+    def setupProb(self, col=None):
         """
         Create a new OSQP problem
         Upper triangular part of self._P is used in OSQP.setup(), 
@@ -206,10 +219,10 @@ class SpookPosL2(SpookPos):
         self.lsparse = lsparse
         self._update_Pmat(Pnew)
 
-    def update_lsmooth(self, lsmooth):
-        self.lsmooth = lsmooth
-        Pnew = self.calcPtriu()
-        self._update_Pmat(Pnew)
+    # def update_lsmooth(self, lsmooth):
+    #     self.lsmooth = lsmooth
+    #     Pnew = self.calcPtriu()
+    #     self._update_Pmat(Pnew)
 
 class SpookL1(SpookQPBase):
     """
@@ -260,8 +273,8 @@ class SpookL1(SpookQPBase):
                 prob.update(q = q)
         if self.verbose: print("Sparsity hyperparam updated.")
 
-    def update_lsmooth(self, lsmooth):
-        self.lsmooth = lsmooth
-        Pnew = self.calcPtriu()
-        self._update_Pmat(Pnew) 
+    # def update_lsmooth(self, lsmooth):
+    #     self.lsmooth = lsmooth
+    #     Pnew = self.calcPtriu()
+    #     self._update_Pmat(Pnew) 
 
