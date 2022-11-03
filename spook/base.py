@@ -122,9 +122,9 @@ class SpookBase:
 
     @property
     def Ng(self):
-        if self._GtG is None:
-            return self._Bcontracted.shape[-1] 
-        return self._GtG.shape[-1]
+        # if self._GtG is None:
+        return self._Bcontracted.shape[-1] 
+        # return self._GtG.shape[-1]
 
     def Asm(self):
         temp = self.lsmooth[0] * self._Asm 
