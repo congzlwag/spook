@@ -85,7 +85,11 @@ class SpookQPBase(SpookBase):
                 self._probs = [self.setupProb(col) for col in range(self.Ng)]
             
     def set_polish(self, polish_bool=True):
-        self._prob.update_settings(polish=polish_bool)
+        if hasattr(self, "_prob"):
+            self._prob.update_settings(polish=polish_bool)
+        else:
+            for prob in self._probs:
+                prob.update_settings(polish=polish_bool)
 
     def qhalf(self, col=None):
         if col is None:
