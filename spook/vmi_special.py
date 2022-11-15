@@ -2,7 +2,8 @@ import numpy as np
 from .lin_solve import SpookLinSolve
 from .quad_program import SpookL1
 import scipy.sparse as sps
-from .utils import laplacian_square_S, dict_innerprod
+from .utils import laplacian_square_S
+from .contraction_utils import adaptive_contraction
 import os
 # from .utils import phspec_preproc
 
@@ -63,16 +64,12 @@ class PhotonFreqResVMI:
 			# cropped = True
 			A1 = A[:,bounds[0]:bounds[1]]
 			AtA =  A1.T @ A1
-			AtQuad = dict_innerprod(vls_spec_dict, processed_quad_dict, bounds)
+			AtQuad = adaptive_contraction(vls_spec_dict, processed_quad_dict, a_slice=bounds)
 			npz_fname = "precontracted.npz"
 			if os.path.exists(npz_fname):
 				print("Overwriting", npz_fname)
 			np.savez_compressed(npz_fname, A=A, BIDs=BIDs, AtA=AtA, AtQuad=AtQuad, vlse_2bounds=bounds)#, cropped=cropped)
-		
-		# if not cropped:
-		# 	AtA = AtA[bounds[0]:bounds[1], bounds[0]:bounds[1]]
-		# 	AtQuad = AtQuad[bounds[0]:bounds[1]]
-		# 	cropped = True
+
 
 		if pxWeights is None:
 			GtG = gData['V'] @ np.diag(gData['S']**2) @ gData['V'].T

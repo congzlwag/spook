@@ -1,12 +1,21 @@
 # Spooktroscopy: Frequency-Domain Ghost Imaging
 
 ## Target Problem
-Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> under [regularizations](#Regularizations). A, G are matrices acting on the two indices of X, i.e. 
+Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> in the least-square way, under [regularizations](#Regularizations). A, G are matrices acting on the two indices of X, i.e. 
 ![(AG)X=B](https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
 
 G is optional, by default (`G=None`) it is identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
 
 The reason for G is to accommodate the combination with [pBASEX](https://github.com/e-champenois/CPBASEX), in which case this is solving the two linear inversions in one step.
+
+### Key Advantages
+The key advantages of this package are
+1. Efficient optimization: Contraction over shots is decoupled from optimization. It is **recommended** to input precontracted results when instantiating, or to save the `._AtA, ._Bcontracted, ._GtG` caches of an instance created with raw input. Once instantiated, the precontracted results are cached to be reused every time solving with a different hyperparameter. See `spook.contraction_utils.adaptive_contraction` .
+2. Support dimension reduction on the dependent variable B, through basis functions in G. In that case, it is also recommended to contract (B,G) over the dependent variable space (index q) prior to instantiating a spook solver.
+3. Support multiple combinations of regularizations. See [Solvers](#Solvers) .
+4. Support time-dependent measurement (Developing): when each entry in the raw input A is a pair of (photon spectrum, delay bin), index w is the flattened axis of <img src="https://render.githubusercontent.com/render/math?math=(\omega,\tau)"> . In this case, the third smoothness hyperparameter is for the delay axis.
+
+At the very bottom level, this package depends on either [OSQP](https://osqp.org) to solve a quadratic programming or LAPACK gesv through `numpy.linalg.solve` . 
 
 ### Regularizations
 Common regularizations are the following three types, all of which optional, depending on what _a prior_ knowledge one wants to enforce on the problem solving.

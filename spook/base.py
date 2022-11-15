@@ -189,28 +189,28 @@ class SpookBase:
     def normalizeAG(self, pre_normalize):
         if not pre_normalize:
             self.__Ascale, self.__Gscale = (1,1)
-        elif self._AtA is not None:
-            scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
-            # Actual normalization happens here
-            self._AtA /= scaleA2
-            self.__Ascale = scaleA2**0.5
-            #print("Assigned __Ascale =", self.__Ascale)
-            if self._GtG is None:
-                scaleG2 = 1
-            else:
-                if isinstance(self._GtG, np.ndarray):
-                    scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
-                else:
-                    scaleG2 = self._GtG.diagonal().mean()
-                # Actual normalization happens here
-                self._GtG /= scaleG2
-            self.__Gscale = scaleG2**0.5
-            # Actual normalization happens here
+        # elif self._AtA is not None:
+        scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
+        # Actual normalization happens here
+        self._AtA /= scaleA2
+        self.__Ascale = scaleA2**0.5
+        #print("Assigned __Ascale =", self.__Ascale)
+        if self._GtG is None:
+            scaleG2 = 1
         else:
-            scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
-            self._AGtAG /= scaleAG2
-            self.__Ascale = scaleAG2**0.5
-            self.__Gscale = 1
+            if isinstance(self._GtG, np.ndarray):
+                scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
+            else:
+                scaleG2 = self._GtG.diagonal().mean()
+            # Actual normalization happens here
+            self._GtG /= scaleG2
+        self.__Gscale = scaleG2**0.5
+        # Actual normalization happens here
+        # else:
+        #     scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
+        #     self._AGtAG /= scaleAG2
+        #     self.__Ascale = scaleAG2**0.5
+        #     self.__Gscale = 1
         self._Bcontracted /= self.AGscale
 
     @property
@@ -266,40 +266,6 @@ class SpookBase:
         self._Bcontracted += Bcontracted_batch
         if hasattr(self, "_AGtAG"):
             del self._AGtAG # Clear cache
-
-    def scan_lsparse(self, lsparse_list, calc_curvature=True, plot=False):
-        assert hasattr(self, "_TrBtB") and self._TrBtB > 0, "To scan l_sparse, make sure self._TrBtB is cached."
-        res = np.zeros((len(lsparse_list),3))
-        for ll, lsp in enumerate(lsparse_list):
-            self.solve(lsp, None)
-            res[ll,:] = [lsp, self.residueL2(), self.sparsity()]
-        idc = np.argsort(res[:,0])
-        res = res[idc]
-        if not calc_curvature:
-            return res
-        Ninterp_min = 101 # Minimal Number of points in interpolation
-        margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
-        res_alllg = np.log10(res)
-        spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
-        ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
-        # Try using spl._spline.derivative
-        rr = np.asarray([s(ll) for s in spls])
-        tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
-        qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
-        kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
-        ss = np.linalg.norm(tt, axis=0).ravel()
-        kk /= ss**3 # curvature
-        curv_dat = np.vstack((ll,rr,ss,kk)).T
-        valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
-        curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
-        # print(plot)
-        if plot:
-            # print("Calling show_lcurve")
-            show_lcurve(res_alllg, curv_dat, plot)
-        idM = np.argmax(curv_dat[:,-1])
-        print(curv_dat[idM,0])
-        self.solve(10**(curv_dat[idM,0]), None)
-        return res, curv_dat
 
         
 if __name__ == '__main__':

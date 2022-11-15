@@ -95,33 +95,33 @@ def iso_struct(csc_mata, csc_matb):
     res = res.all() and (csc_mata.indptr == csc_matb.indptr).all()
     return res
 
-def normalizedATA(A):
-    """
-    This will normalize A (not in situ normalization) such that
-    sum(A_{ij}^2)/N_A = 1
-    i.e. pixel-averaged but shot-accumulated A^2 is 1
-    """
-    AtA = (A.T) @ A
-    scaleA = (np.trace(AtA) / (A.shape[1]))**0.5 # px-wise mean-square
-    AtA /= (scaleA**2)
-    return AtA, scaleA
+# def normalizedATA(A):
+#     """
+#     This will normalize A (not in situ normalization) such that
+#     sum(A_{ij}^2)/N_A = 1
+#     i.e. pixel-averaged but shot-accumulated A^2 is 1
+#     """
+#     AtA = (A.T) @ A
+#     scaleA = (np.trace(AtA) / (A.shape[1]))**0.5 # px-wise mean-square
+#     AtA /= (scaleA**2)
+#     return AtA, scaleA
 
-def normalizedB(B):
-    """
-    This will normalize B (not in situ normalization) such that
-    sum(B_{ij}^2)/N_B = 1
-    i.e. pixel-averaged but shot-accumulated B^2 is 1
-    """
-    scaleB = np.linalg.norm(B,"fro") / (B.shape[1]**0.5)
-    return B/scaleB, scaleB
+# def normalizedB(B):
+#     """
+#     This will normalize B (not in situ normalization) such that
+#     sum(B_{ij}^2)/N_B = 1
+#     i.e. pixel-averaged but shot-accumulated B^2 is 1
+#     """
+#     scaleB = np.linalg.norm(B,"fro") / (B.shape[1]**0.5)
+#     return B/scaleB, scaleB
 
-def comboNormalize(A, B, return_scalefactors=False):
-    AtA, scaleA = normalizedATA(A)
-    tmp, scaleB = normalizedB(B)
-    AtB = (A/scaleA).T @ tmp
-    if return_scalefactors:
-        return AtA, AtB, scaleA, scaleB
-    return AtA, AtB
+# def comboNormalize(A, B, return_scalefactors=False):
+#     AtA, scaleA = normalizedATA(A)
+#     tmp, scaleB = normalizedB(B)
+#     AtB = (A/scaleA).T @ tmp
+#     if return_scalefactors:
+#         return AtA, AtB, scaleA, scaleB
+#     return AtA, AtB
 
 def count_delaybin(at_iter):
     at_vals = at_iter.values() if isinstance(at_iter, dict) else at_iter
@@ -154,6 +154,40 @@ def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
     # if not normalized: # back to the original scale
     #     return rl2 * self.AGscale
     return rl2
+
+def scan_lsparse(spk, lsparse_list, calc_curvature=True, plot=False):
+    assert hasattr(spk, "_TrBtB") and spk._TrBtB > 0, "To scan l_sparse, make sure spk._TrBtB is cached."
+    res = np.zeros((len(lsparse_list),3))
+    for ll, lsp in enumerate(lsparse_list):
+        spk.solve(lsp, None)
+        res[ll,:] = [lsp, spk.residueL2(), spk.sparsity()]
+    idc = np.argsort(res[:,0])
+    res = res[idc]
+    if not calc_curvature:
+        return res
+    Ninterp_min = 101 # Minimal Number of points in interpolation
+    margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
+    res_alllg = np.log10(res)
+    spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
+    ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
+    # Try using spl._spline.derivative
+    rr = np.asarray([s(ll) for s in spls])
+    tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
+    qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
+    kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
+    ss = np.linalg.norm(tt, axis=0).ravel()
+    kk /= ss**3 # curvature
+    curv_dat = np.vstack((ll,rr,ss,kk)).T
+    valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
+    curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
+    # print(plot)
+    if plot:
+        # print("Calling show_lcurve")
+        show_lcurve(res_alllg, curv_dat, plot)
+    idM = np.argmax(curv_dat[:,-1])
+    print(curv_dat[idM,0])
+    spk.solve(10**(curv_dat[idM,0]), None)
+    return res, curv_dat
 
 def show_lcurve(log_scan_results, curv_dat, plot):
     """
