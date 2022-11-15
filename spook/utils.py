@@ -123,9 +123,24 @@ def comboNormalize(A, B, return_scalefactors=False):
         return AtA, AtB, scaleA, scaleB
     return AtA, AtB
 
-def count_delaybin(Blist):
-    tlist = [t for t, b in Blist]
+def count_delaybin(at_iter):
+    at_vals = at_iter.values() if isinstance(at_iter, dict) else at_iter
+    tlist = [t for a, t in at_vals]
     return max(tlist)  - min(tlist) + 1
+
+def eval_Nw(at_iter):
+    if isinstance(at_iter, list):
+        return len(at_iter[0][0])
+    at = list(at_iter.values())[0]
+    return len(at[0])
+
+def eval_Ng(b_iter):
+    if isinstance(b_iter, dict):
+        for b0 in b_iter.values():
+            if sps.issparse(b0):
+                return np.prod(b0.shape)
+            return b0.size
+    return b_iter[0].size
 
 def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
     quad = Xo.T @ AtA @ Xo

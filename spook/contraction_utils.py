@@ -91,6 +91,40 @@ def shots_asarray(shots_iterable, shots_select=None, singleshot_slice=None):
         out[j,:] = ar[:]
     return out
 
+def allsqsum(A, a_slice=None):
+    match_keylist, Nshot = check_matchness(A,A)
+    a_slice = check_sliceobj(a_slice)
+    try:
+        Afull = shots_asarray(A, match_keylist, a_slice)
+        return np.sum(abs(Afull)**2)
+    except MemoryError:
+        l0 = [0] if match_keylist is None else match_keylist[:1]
+        a0 = shots_asarray(A, l0, a_slice)
+        Na = a0.size
+        chunk_size = min(2000, int(2e9/Na))
+        # print(f"Chunk up by {chunk_size} shots")
+        del a0
+        segpoints = np.append(np.arange(0,Nshot,chunk_size), Nshot)
+        res = 0
+        for i, segstart in enumerate(segpoints[:-1]):
+            segstop = segpoints[i+1]
+            if match_keylist is None:
+                shot_select = np.arange(segstart, segstop)
+            else:
+                shot_select = match_keylist[segstart:segstop]
+            Achunk = shots_asarray(A, shot_select, a_slice)
+            res += np.sum(abs(Achunk)**2)
+    return res
+
+def adaptive_dot(B, G):
+    if isinstance(B, np.ndarray):
+        return B @ G
+    elif isinstance(B, list):
+        return [b @ G for b in B] 
+        # b will be automatically densified by @ if it were sparse
+    else:
+        return {k: b @ G for k,b in B.items()}
+
 def check_matchness(A, B):
     if isinstance(B, dict):
         assert isinstance(A, dict), "B in dict type can only contract with A in dict type"
