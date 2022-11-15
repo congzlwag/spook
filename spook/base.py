@@ -23,12 +23,14 @@ class SpookBase:
     smoothness_drop_boundaries = True
     verbose = False
     def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
-        Bsmoother="laplacian", Asmoother="laplacian", pre_normalize=True):
+        Bsmoother="laplacian", Asmoother="laplacian", normalize=True):
         """
         :param mode: "raw" or "contracted" (recommended) or "ADraw"
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
         :param Bsmoother: the quadratic matrix for smoothness
-        :param pre_normalize: whether or not to normalize ATA, GTG
+        :param normalize: If True, then normalize ATA, GTG, obtaining scale factors (sA, sG) and then normalize Bcontracted
+                          If (sA, sG), then cache the scale factors and do nothing on the contracted results
+                          If False, do nothing and set (sA, sG) = (1,1)
         """
         assert (mode in ['raw', 'contracted', 'ADraw']), f"Unknown mode: {mode}. Must be either 'raw' or 'contracted' or 'ADraw'"
 
@@ -108,7 +110,7 @@ class SpookBase:
             self._Tsm = laplacian_square_S(self.NaTuple[1], self.smoothness_drop_boundaries)
             self._Tsm = sps.kron(sps.eye(self.NaTuple[0]), self._Tsm)
             self._Asm = sps.kron(self._Asm, sps.eye(self.NaTuple[1]))
-        self.normalizeAG(pre_normalize)
+        self.normalizeAG(normalize)
 #         print("At the end of __init__, __Ascale =", self.__Ascale)
 
 
@@ -186,32 +188,33 @@ class SpookBase:
             ret = True
         return ret
 
-    def normalizeAG(self, pre_normalize):
-        if not pre_normalize:
+    def normalizeAG(self, normalize):
+        if normalize == False:
             self.__Ascale, self.__Gscale = (1,1)
-        # elif self._AtA is not None:
-        scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
-        # Actual normalization happens here
-        self._AtA /= scaleA2
-        self.__Ascale = scaleA2**0.5
-        #print("Assigned __Ascale =", self.__Ascale)
-        if self._GtG is None:
-            scaleG2 = 1
+        elif isinstance(normalize, tuple):
+            self.__Ascale, self.__Gscale = normalize
         else:
-            if isinstance(self._GtG, np.ndarray):
-                scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
-            else:
-                scaleG2 = self._GtG.diagonal().mean()
+            scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
             # Actual normalization happens here
-            self._GtG /= scaleG2
-        self.__Gscale = scaleG2**0.5
-        # Actual normalization happens here
-        # else:
-        #     scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
-        #     self._AGtAG /= scaleAG2
-        #     self.__Ascale = scaleAG2**0.5
-        #     self.__Gscale = 1
-        self._Bcontracted /= self.AGscale
+            self._AtA /= scaleA2
+            self.__Ascale = scaleA2**0.5
+            if self._GtG is None:
+                scaleG2 = 1
+            else:
+                if isinstance(self._GtG, np.ndarray):
+                    scaleG2 = np.trace(self._GtG) / (self.Ng) # px-wise mean-square
+                else:
+                    scaleG2 = self._GtG.diagonal().mean()
+                # Actual normalization happens here
+                self._GtG /= scaleG2
+            self.__Gscale = scaleG2**0.5
+            # Actual normalization happens here
+            # else:
+            #     scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
+            #     self._AGtAG /= scaleAG2
+            #     self.__Ascale = scaleAG2**0.5
+            #     self.__Gscale = 1
+            self._Bcontracted /= self.AGscale
 
     @property
     def AGscale(self):
@@ -267,6 +270,19 @@ class SpookBase:
         if hasattr(self, "_AGtAG"):
             del self._AGtAG # Clear cache
 
+    def save_prectr(self, inplace=False):
+        A2, G2, AG = self.__Ascale**2, self.__Gscale**2, self.AGscale
+        if inplace:
+            ret = {"AtA_nmlz":self._AtA, "GtG_nmlz":self._GtG, "Bcontracted_nmlz":self._Bcontracted,
+                   "sA":self.__Ascale, "sG":self.__Gscale}
+            Warning("inplace=True saves memory from copying the large arrays by passing out the references."+\
+                    "To reuse for instantiating another Spook solver, pass normalize=(sA,sG).")
+            return ret
+        ret = {}
+        ret['AtA'] = self._AtA * A2
+        ret['Bcontracted'] = self._Bcontracted * AG
+        ret['GtG'] = self._GtG * G2 if self._GtG is not None else None
+        return ret
         
 if __name__ == '__main__':
     np.random.seed(1996)
