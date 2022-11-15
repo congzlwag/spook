@@ -13,7 +13,7 @@ The key advantages of this package are
 1. Efficient optimization: Contraction over shots is decoupled from optimization. It is **recommended** to input precontracted results when instantiating, or to save the `._AtA, ._Bcontracted, ._GtG` caches of an instance created with raw input. Once instantiated, the precontracted results are cached to be reused every time solving with a different hyperparameter. See `spook.contraction_utils.adaptive_contraction` .
 2. Support dimension reduction on the dependent variable B, through basis functions in G. In that case, it is also recommended to contract (B,G) over the dependent variable space (index q) prior to instantiating a spook solver.
 3. Support multiple combinations of regularizations. See [Solvers](#Solvers) .
-4. Support time-dependent measurement (Developing): when each entry in the raw input A is a pair of (photon spectrum, delay bin), index w is the flattened axis of <img src="https://render.githubusercontent.com/render/math?math=(\omega,\tau)"> . In this case, the third smoothness hyperparameter is for the delay axis.
+4. Support time-dependent measurement (Developing): when each entry in the raw input A is a pair of (photon spectrum, delay bin), index w is the flattened axis of (<img src="https://render.githubusercontent.com/render/math?math=\omega">, <img src="https://render.githubusercontent.com/render/math?math=\tau">). In this case, the third smoothness hyperparameter is for the delay axis.
 
 At the very bottom level, this package depends on either [OSQP](https://osqp.org) to solve a quadratic programming or LAPACK gesv through `numpy.linalg.solve` . 
 
