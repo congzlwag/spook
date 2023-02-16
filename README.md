@@ -1,12 +1,12 @@
-# Spooktroscopy: Frequency-Domain Ghost Imaging
+# Spooktroscopy: Spectral-Domain Ghost Imaging
 
 ## Target Problem
-Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> in the least-square way, under [regularizations](#Regularizations). A, G are matrices acting on the two indices of X, i.e. 
-![(AG)X=B](https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_{w,q}A_{iw}G_{jq}X_{wq}=B_{ij}) 
+Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes G)X = B"> in the least-square way, under [regularizations](#Regularizations). A, G are matrices acting on the two dimensions of X, i.e. 
+![(AG)X=B](https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_{w,b}A_{iw}G_{bq}X_{wb}=B_{iq}) .
+For spectral-domain ghost imaging, the dimension indexed by <img src="https://render.githubusercontent.com/render/math?math=w"> is photon energy, and the other dimension can be properties of the photoproduct, such as the electron kinetic energy.
 
-G is optional, by default (`G=None`) it is identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
-
-The reason for G is to accommodate the combination with [pBASEX](https://github.com/e-champenois/CPBASEX), in which case this is solving the two linear inversions in one step.
+`G` is the (optional) linear operator on the dimension indexed by <img src="https://render.githubusercontent.com/render/math?math=b">. By default (`G=None`), it is the identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
+`G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. With `mode='raw'`, pass in matrix ![G](https://latex.codecogs.com/svg.latex?\normalsize&space;G_{bq}) to G, and with `mode='contracted'`, pass in matrix ![GtG](https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_qG_{bq}G_{b'q}). For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
 
 ### Key Advantages
 The key advantages of this package are

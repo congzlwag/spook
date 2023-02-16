@@ -55,14 +55,14 @@ class SpookQPBase(SpookBase):
         if not hasattr(self,'_probs'):
             solution = self._prob.solve()
             if solution.info.status != 'solved':
-                Warning("Problem not solved. Status: %s"%(self.res.info.status))
+                Warning("Problem not solved. Status: %s"%(solution.info.status))
             else:
                 self.res = solution.x
         else:
             for col, prob in enumerate(self._probs):
                 solution = prob.solve()
                 if solution.info.status != 'solved':
-                    Warning(f"Problem not solved at col{col}. Status: {self.res.info.status}")
+                    Warning(f"Problem not solved at col{col}. Status: {solution.info.status}")
                 self.res.append(solution.x)
             self.res = np.asarray(self.res).T
         return self.res
