@@ -95,19 +95,19 @@ if __name__ == '__main__':
     G = np.identity(Ng) - 0.2*np.diag(np.ones(Ng-1),k=-1) - 0.2*np.diag(np.ones(Ng-1),k=1)
     G = G[:,:Nb]
 
-    from matplotlib import pyplot as plt
-    B0 = Ardm @ Xtrue
-    B1 = B0 @ (G.T)
-    B0 += 1e-3*np.linalg.norm(B0) * np.random.randn(*(B0.shape))
-    B1 += 1e-3*np.linalg.norm(B1) * np.random.randn(*(B1.shape))
-    spk0 = SpookLinSolve(B0, Ardm, "raw", lsparse=1, lsmooth=(0.1,0.))
-    spk1 = SpookLinSolve(B1, Ardm, "raw", G, lsparse=1, lsmooth=(0.1,0.1))
+    # from matplotlib import pyplot as plt
+    # B0 = Ardm @ Xtrue
+    # B1 = B0 @ (G.T)
+    # B0 += 1e-3*np.linalg.norm(B0) * np.random.randn(*(B0.shape))
+    # B1 += 1e-3*np.linalg.norm(B1) * np.random.randn(*(B1.shape))
+    # spk0 = SpookLinSolve(B0, Ardm, "raw", lsparse=1, lsmooth=(0.1,0.))
+    # spk1 = SpookLinSolve(B1, Ardm, "raw", G, lsparse=1, lsmooth=(0.1,0.1))
 
-    # X0 = spk0.getXopt(0, (0, 0))
-    X1 = spk1.getXopt(0, (0,0))
-    # print(Xtrue)
-    # print(X0)
-    plt.ion()
-    plt.imshow(Xtrue, vmin=0, vmax=1)
-    plt.figure()
-    plt.imshow(X1, vmin=0, vmax=1)
+    # # X0 = spk0.getXopt(0, (0, 0))
+    # X1 = spk1.getXopt(0, (0,0))
+    # # print(Xtrue)
+    # # print(X0)
+    # plt.ion()
+    # plt.imshow(Xtrue, vmin=0, vmax=1)
+    # plt.figure()
+    # plt.imshow(X1, vmin=0, vmax=1)

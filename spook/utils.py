@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sps
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 def laplacian1D_S(N):
     Lmat = sps.eye(N)*(-2)
@@ -189,15 +189,10 @@ def scan_lsparse(spk, lsparse_list, calc_curvature=True, plot=False):
     spk.solve(10**(curv_dat[idM,0]), None)
     return res, curv_dat
 
-def show_lcurve(log_scan_results, curv_dat, plot):
+def show_lcurve(log_scan_results, curv_dat, fig):
     """
     Plot the data in a L-curve scan.
     """
-    if plot == True:
-        # print("Making a new figure")
-        fig = plt.figure(figsize=(8,4))
-    else:
-        fig = plot 
     ax0 = fig.add_subplot(1,2,1)
     sc = ax0.scatter(log_scan_results[:,1],log_scan_results[:,2], c=log_scan_results[:,0])
     cax = fig.colorbar(sc,ax=ax0)
