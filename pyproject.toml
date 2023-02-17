@@ -1,3 +1,8 @@
 [build-system]
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
+dependencies = [
+    "numpy >= 1.19",
+    "scipy >= 1.7",
+    "osqp >= 0.6.2",
+]

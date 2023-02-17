@@ -5,6 +5,6 @@ authors:
     given-names: Jun
     orcid: https://orcid.org/0000-0003-1962-895X
 title: "Spook - A package of spectral-domain ghost imaging implementations"
-version: 0.5
+version: 0.9.2
 doi: 
-date-released: 2022-05-01
+date-released: 2023-02-16
