@@ -6,7 +6,9 @@ Solve <img src="https://render.githubusercontent.com/render/math?math=(A \otimes
 For spectral-domain ghost imaging, the dimension indexed by <img src="https://render.githubusercontent.com/render/math?math=w"> is photon energy, and the other dimension can be properties of the photoproduct, such as the electron kinetic energy.
 
 `G` is the (optional) linear operator on the dimension indexed by <img src="https://render.githubusercontent.com/render/math?math=b">. By default (`G=None`), it is the identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
-`G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. With `mode='raw'`, pass in matrix <img src="https://latex.codecogs.com/svg.latex?\normalsize&space;G_{bq}"> to G, and with `mode='contracted'`, pass in matrix <img src="https://latex.codecogs.com/svg.latex?\normalsize&space;\sum_qG_{bq}G_{b'q}">. For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
+`G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. 
+
+With `mode='raw'`, pass in matrix ![G](https://latex.codecogs.com/svg.latex?G_{bq}) to G, and with `mode='contracted'`, pass in matrix ![GtG](https://latex.codecogs.com/svg.latex?\sum_qG_{bq}G_{b'q}). For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
 
 ### Key Advantages
 The key advantages of this package are
