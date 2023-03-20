@@ -19,15 +19,6 @@ The key advantages of this package are
 
 At the very bottom level, this package depends on either [OSQP](https://osqp.org) to solve a quadratic programming or LAPACK gesv through `numpy.linalg.solve` . 
 
-### Regularizations
-Common regularizations are the following three types, all of which optional, depending on what _a prior_ knowledge one wants to enforce on the problem solving.
-
-1. Nonnegativity: To constrain <img src="https://render.githubusercontent.com/render/math?math=X\succeq 0">
-2. Sparsity: To penalize on <img src="https://render.githubusercontent.com/render/math?math=\|X\|_1"> or <img src="https://render.githubusercontent.com/render/math?math=\|X\|_2^2">
-3. Smoothness: To penalize on roughness of X , along the two indices, independently. For <img src="https://render.githubusercontent.com/render/math?math=\omega">-axis, which is the photon energy axis, the form is fixed <img src="https://render.githubusercontent.com/render/math?math=\|(L_{N_w}\otimes I)X\|_2^2"> where <img src="https://render.githubusercontent.com/render/math?math=L_{N_w}"> is the [laplacian](https://en.wikipedia.org/wiki/Laplace_operator). Roughness along the second axis of X is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
-
-Sparsity and Smoothness are enforced through penalties in the total obejctive function, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth`. `lsmooth` is a 2-tuple that weight roughness penalty along the two axes of X respectively. The hyperparameters can be passed in during instantiation and also updated afterwards. It is recommended to call method `getXopt` with the hyperparameter(s) to be updated, because it will update, solve, and return the optimal X in one step. Calling `solve` with  the hyperparameter(s) to be updated and then calling `getXopt()` without input is effectively the same, and the problem will be solved once as long as there is no update.
-
 ## Solvers
 
 Different combinations of regularizations can lead to different forms of objective function. Solvers in package always formalize the specific problem into either a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) or a linear equation. Examples can be found in [unit tests](#UnitTests) 
@@ -48,6 +39,14 @@ For cases where it can be formalized into a [Quadratic Programming](https://en.w
 
 A rare case that it can be formalized into a linear equation is the third line in the table above: no nonnegativity constraint, and the sparsity is L2 norm squared. This is implemented in `SpookLinSolve` , which calls `numpy.linalg.solve` or `scipy.sparse.linalg.spsolve` .
 
+### Regularizations
+Common regularizations are the following three types, all of which optional, depending on what _a prior_ knowledge one wants to enforce on the problem solving.
+
+1. Nonnegativity: To constrain <img src="https://render.githubusercontent.com/render/math?math=X\succeq 0">
+2. Sparsity: To penalize on <img src="https://render.githubusercontent.com/render/math?math=\|X\|_1"> or <img src="https://render.githubusercontent.com/render/math?math=\|X\|_2^2">
+3. Smoothness: To penalize on roughness of X , along the two indices, independently. For <img src="https://render.githubusercontent.com/render/math?math=\omega">-axis, which is the photon energy axis, the form is fixed <img src="https://render.githubusercontent.com/render/math?math=\|(L_{N_w}\otimes I)X\|_2^2"> where <img src="https://render.githubusercontent.com/render/math?math=L_{N_w}"> is the [laplacian](https://en.wikipedia.org/wiki/Laplace_operator). Roughness along the second axis of X is customizable through parameter `Bsmoother`, which by default is laplacian squared too.
+
+Sparsity and Smoothness are enforced through penalties in the total obejctive function, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth`. `lsmooth` is a 2-tuple that weight roughness penalty along the two axes of X respectively. The hyperparameters can be passed in during instantiation and also updated afterwards. It is recommended to call method `getXopt` with the hyperparameter(s) to be updated, because it will update, solve, and return the optimal X in one step. Calling `solve` with  the hyperparameter(s) to be updated and then calling `getXopt()` without input is effectively the same, and the problem will be solved once as long as there is no update.
 
 ## Normalization Convention
 
@@ -70,7 +69,10 @@ The entries in B are not always accessible, because of the option to pass in pre
 
 ## Dependencies
 
-See `requirements.txt`
+pip installation should manage the dependencies automatically. If not, check `requirements.txt` . 
 
 ## Acknowledgement
 This work was supported by the U.S. Department of Energy (DOE), Office of Science, Office of Basic Energy Sciences (BES), Chemical Sciences, Geosciences, and Biosciences Division (CSGB).
+
+## References
+Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-2630/acc201) and [Li _et al_ 2021](https://iopscience.iop.org/article/10.1088/1361-6455/abcdf1) when using this package in your work.
