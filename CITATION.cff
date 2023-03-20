@@ -8,3 +8,30 @@ title: "Spook - A package of spectral-domain ghost imaging implementations"
 version: 0.9.3
 doi: 
 date-released: 2023-02-16
+preferred-citation:
+  type: article
+  authors: 
+  - family-names: "Wang"
+    given-names: "Jun"
+    orcid: "https://orcid.org/0000-0003-1962-895X"
+  - family-names: "Driver"
+    given-names: "Taran"
+  - family-names: "Allum"
+    given-names: "Felix"
+  - family-names: "Bucksbaum"
+    given-names: "Philip H."
+  - family-names: "Erk"
+    given-names: "Benjamin"
+  - family-names: "Forbes"
+    given-names: "Ruaridh"
+  - family-names: "Cryan"
+    given-names: "James P."
+  journal: "New Journal of Physics"
+  doi: "10.1088/1367-2630/acc201"
+  url: "https://dx.doi.org/10.1088/1367-2630/acc201"
+  year: 2023
+  month: 3
+  publisher: "IOP Publishing"
+  volume: 25
+  number: 3
+  pages: 033017
