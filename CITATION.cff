@@ -14,16 +14,6 @@ preferred-citation:
   - family-names: "Wang"
     given-names: "Jun"
     orcid: "https://orcid.org/0000-0003-1962-895X"
-  - family-names: "Driver"
-    given-names: "Taran"
-  - family-names: "Allum"
-    given-names: "Felix"
-  - family-names: "Bucksbaum"
-    given-names: "Philip H."
-  - family-names: "Erk"
-    given-names: "Benjamin"
-  - family-names: "Forbes"
-    given-names: "Ruaridh"
   - family-names: "Cryan"
     given-names: "James P."
   journal: "New Journal of Physics"
@@ -34,4 +24,4 @@ preferred-citation:
   publisher: "IOP Publishing"
   volume: 25
   number: 3
-  pages: 033017
+  start: 033017
