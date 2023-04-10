@@ -19,6 +19,11 @@ The key advantages of this package are
 
 At the very bottom level, this package depends on either [OSQP](https://osqp.org) to solve a quadratic programming or LAPACK gesv through `numpy.linalg.solve` . 
 
+## Installation
+The stable version is on PyPI. Unfortunately in a different name.
+
+    pip install FDGI
+
 ## Solvers
 
 Different combinations of regularizations can lead to different forms of objective function. Solvers in package always formalize the specific problem into either a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) or a linear equation. Examples can be found in [unit tests](#UnitTests) 
