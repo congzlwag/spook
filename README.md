@@ -38,7 +38,7 @@ Different combinations of regularizations can lead to different forms of objecti
 
 ### Quadratic Programming
 
-For cases where it can be formalized into a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) , [OSQP](https://osqp.org) does the job. Thus the root numerical method is alternating direction method of multipliers (ADMM). Looking into the [solver settings of OSQP](https://osqp.org/docs/interfaces/solver_settings.html) is always encouraged, but the default settings usually work fine for `spook` . If one needs to pass in settings, the OSQP solver is `SpookQPBase._prob` .
+For cases where it can be formalized into a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) , [OSQP](https://osqp.org) is the weight-lifter. The root numerical method is the alternating direction method of multipliers (ADMM). Looking into the [solver settings of OSQP](https://osqp.org/docs/interfaces/solver_settings.html) is always encouraged, but the default settings usually work fine for `spook` . If one needs to pass in settings, use `spk._prob.update_settings(**osqp_kwargs)` on your solver instance `spk`. 
 
 ### Linear Equation
 
@@ -65,6 +65,8 @@ where <img src="https://render.githubusercontent.com/render/math?math=N_w, N_q">
 
 The entries in B are not always accessible, because of the option to pass in precontracted results and in `mode='contracted'`. Therefore B is not normalized. 
 
+## Citing
+Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-2630/acc201) when using this package in your publishable work. If `SpookPosL1`, `SpookPosL2` or `SpookL1` is used, we also **strongly recommend** to cite the original OSQP paper as suggested [here](https://osqp.org/citing/).
 
 ## Unit Tests
 
@@ -78,6 +80,3 @@ pip installation should manage the dependencies automatically. If not, check `re
 
 ## Acknowledgement
 This work was supported by the U.S. Department of Energy (DOE), Office of Science, Office of Basic Energy Sciences (BES), Chemical Sciences, Geosciences, and Biosciences Division (CSGB).
-
-## References
-Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-2630/acc201) and [Li _et al_ 2021](https://iopscience.iop.org/article/10.1088/1361-6455/abcdf1) when using this package in your work.
