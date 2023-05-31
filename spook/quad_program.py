@@ -28,7 +28,7 @@ class SpookQPBase(SpookBase):
             self._Pcore = sps.triu(self._AtA, 0, "csc")
             self._P = self.calcPtriu()
             self._probs= [self.setupProb(col) for col in range(Ng)]
-
+        self.set_polish(True)
 
     def calc_total_smoother_triu(self):
         """
