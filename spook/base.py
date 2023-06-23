@@ -29,8 +29,11 @@ class SpookBase:
                      In the "contracted" mode, A is AT@A, B is (AT otimes GT)@B, G is GTG
         :param Bsmoother: the quadratic matrix for smoothness
         :param normalize: If True, then normalize ATA, GTG, obtaining scale factors (sA, sG) and then normalize Bcontracted
+                              But it won't be in-place for mode='contracted'
+                          If 'inplace', then the normalizations are done in-place
                           If (sA, sG), then cache the scale factors and do nothing on the contracted results
                           If False, do nothing and set (sA, sG) = (1,1)
+                          
         """
         assert (mode in ['raw', 'contracted', 'ADraw']), f"Unknown mode: {mode}. Must be either 'raw' or 'contracted' or 'ADraw'"
 
@@ -193,10 +196,8 @@ class SpookBase:
             self.__Ascale, self.__Gscale = (1,1)
         elif isinstance(normalize, tuple):
             self.__Ascale, self.__Gscale = normalize
-        else:
+        else: # normalize in ['inplace', True]
             scaleA2 = np.trace(self._AtA) / (self._AtA.shape[1]) # px-wise mean-square
-            # Actual normalization happens here
-            self._AtA /= scaleA2
             self.__Ascale = scaleA2**0.5
             if self._GtG is None:
                 scaleG2 = 1
@@ -206,15 +207,19 @@ class SpookBase:
                 else:
                     scaleG2 = self._GtG.diagonal().mean()
                 # Actual normalization happens here
-                self._GtG /= scaleG2
+                if normalize == 'inplace':
+                    self._GtG /= scaleG2
+                else:
+                    self._GtG = self._GtG.copy() / scaleG2
             self.__Gscale = scaleG2**0.5
             # Actual normalization happens here
-            # else:
-            #     scaleAG2 = np.trace(self._AGtAG) / (self._AGtAG.shape[1])
-            #     self._AGtAG /= scaleAG2
-            #     self.__Ascale = scaleAG2**0.5
-            #     self.__Gscale = 1
-            self._Bcontracted /= self.AGscale
+            if normalize == 'inplace':
+                self._AtA /= scaleA2
+                self._Bcontracted /= self.AGscale
+            else:
+                self._AtA = self._AtA.copy() / scaleA2
+                self._Bcontracted = self._Bcontracted.copy() / self.AGscale
+
 
     @property
     def AGscale(self):

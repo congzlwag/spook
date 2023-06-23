@@ -22,7 +22,7 @@ class SpookQPBase(SpookBase):
             # upper triangular part
             self._P = self.calcPtriu()
             # SpookL1 will have self._P in shape (2*Nag, 2*Nag), which has no memory overhead
-            # beacuse the other three blocks are all zeros, and reize does it in situ
+            # beacuse the other three blocks are all zeros, and resize does it in situ
             self._prob = self.setupProb()
         else:
             self._Pcore = sps.triu(self._AtA, 0, "csc")
