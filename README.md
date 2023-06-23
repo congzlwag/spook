@@ -8,7 +8,7 @@ For spectral-domain ghost imaging, the dimension indexed by <img src="https://re
 `G` is the (optional) linear operator on the dimension indexed by <img src="https://render.githubusercontent.com/render/math?math=b">. By default (`G=None`), it is the identity, in which case this is the conventional Spooktroscopy, i.e. to solve <img src="https://render.githubusercontent.com/render/math?math=AX=B"> under regularizations. 
 `G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. 
 
-With `mode='raw'`, pass in matrix ![G](https://latex.codecogs.com/svg.latex?G_{bq}) to G, and with `mode='contracted'`, pass in matrix ![GtG](https://latex.codecogs.com/svg.latex?\sum_qG_{bq}G_{b'q}). For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
+With `mode='raw'`, pass in matrix $G_{bq}$ to G, and with `mode='contracted'`, pass in matrix $\sum_qG_{bq}G_{b'q}$. For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
 
 ### Key Advantages
 The key advantages of this package are
@@ -57,13 +57,11 @@ Sparsity and Smoothness are enforced through penalties in the total obejctive fu
 
 The entries in <img src="https://render.githubusercontent.com/render/math?math=A^TA, G^TG"> are preferred to be on the order of unity, because regularization-related quadratic form matrices have their entries around unity. The scale factors are set as
 
-![normalization](https://latex.codecogs.com/svg.latex?&space;s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)})
+$$s_a=\sqrt{\frac{1}{N_w}\mathrm{tr}(A^TA)},s_g=\sqrt{\frac{1}{N_q}\mathrm{tr}(G^TG)}$$
 
-where <img src="https://render.githubusercontent.com/render/math?math=N_w, N_q"> are the dimensions along w-axis and q-axis, respectively. <img src="https://render.githubusercontent.com/render/math?math=s_as_g"> is an accessible property of the solver `AGscale`. To normalize or not is controlled by parameter `pre_normalize` in instanciation. 
+where <img src="https://render.githubusercontent.com/render/math?math=N_w, N_q"> are the dimensions along w-axis and q-axis, respectively. <img src="https://render.githubusercontent.com/render/math?math=s_as_g"> is an accessible property of the solver `AGscale`. To normalize or not is controlled by parameter `normalize` in creating a solver. 
 
-**By default** `pre_normalize=True`, i.e. `self._AtA` =<img src="https://render.githubusercontent.com/render/math?math=A^TA/s_a^2">, `self._GtG` =<img src="https://render.githubusercontent.com/render/math?math=G^TG/s_g^2">, and `self._Bcontracted` = <img src="https://render.githubusercontent.com/render/math?math=(A^T \otimes G^T)B/(s_as_g)">. In this case, the direct solution `self.res` is scaled as <img src="https://render.githubusercontent.com/render/math?math=s_as_g X_\mathrm{opt}"> , but in `getXopt` the final result of <img src="https://render.githubusercontent.com/render/math?math=X_\mathrm{opt}"> is scaled back before returned.
-
-The entries in B are not always accessible, because of the option to pass in precontracted results and in `mode='contracted'`. Therefore B is not normalized. 
+**By default** `normalize=True`, i.e. `self._AtA` =<img src="https://render.githubusercontent.com/render/math?math=A^TA/s_a^2">, `self._GtG` =<img src="https://render.githubusercontent.com/render/math?math=G^TG/s_g^2">, and `self._Bcontracted` = <img src="https://render.githubusercontent.com/render/math?math=(A^T \otimes G^T)B/(s_as_g)">, and the normalization is not in-place starting from version 0.9.4 . In this case, the direct solution `self.res` is scaled as <img src="https://render.githubusercontent.com/render/math?math=s_as_g X_\mathrm{opt}"> , but the `getXopt` method returns the unscaled result of <img src="https://render.githubusercontent.com/render/math?math=X_\mathrm{opt}">. In v0.9.3 and before, the normalization is in-place, which means the first two arguments are modified in-place. In-place normalization saves memory but causes confusion when people reuses the precontracted results for other purposes after passing them to create a solver in the contracted mode. Therefore starting from v0.9.4, in-place normalization is only done when requested with `normalize='inplace'` in creating a solver.
 
 ## Citing
 Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-2630/acc201) when using this package in your publishable work. If `SpookPosL1`, `SpookPosL2` or `SpookL1` is used, we also **strongly recommend** to cite the original OSQP paper as suggested [here](https://osqp.org/citing/).
