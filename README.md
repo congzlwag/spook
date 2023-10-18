@@ -63,6 +63,10 @@ where <img src="https://render.githubusercontent.com/render/math?math=N_w, N_q">
 
 **By default** `normalize=True`, i.e. `self._AtA` =<img src="https://render.githubusercontent.com/render/math?math=A^TA/s_a^2">, `self._GtG` =<img src="https://render.githubusercontent.com/render/math?math=G^TG/s_g^2">, and `self._Bcontracted` = <img src="https://render.githubusercontent.com/render/math?math=(A^T \otimes G^T)B/(s_as_g)">, and the normalization is not in-place starting from version 0.9.4 . In this case, the direct solution `self.res` is scaled as <img src="https://render.githubusercontent.com/render/math?math=s_as_g X_\mathrm{opt}"> , but the `getXopt` method returns the unscaled result of <img src="https://render.githubusercontent.com/render/math?math=X_\mathrm{opt}">. In v0.9.3 and before, the normalization is in-place, which means the first two arguments are modified in-place. In-place normalization saves memory but causes confusion when people reuses the precontracted results for other purposes after passing them to create a solver in the contracted mode. Therefore starting from v0.9.4, in-place normalization is only done when requested with `normalize='inplace'` in creating a solver.
 
+With this normalization convention, the hyperparmeters whose associated regularization function is not quadratic in $X$ need scaling when changing the size of dataset. 
+If $h(s X) = s^p h(X)$, then the scaling power of $h(X)$ is $p$, e.g. $p=2$ for quadratic terms.
+When duplicating the same dataset to $m$ times its original size, in order to keep the optimal point unchanged, we need to set $\lambda\mapsto m^{1-p/2} \lambda$. Therefore for $p=1$ regularization terms, the scaling is $\sqrt{m}$, and for $p=2$ terms they do not scale.
+
 ## Citing
 Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-2630/acc201) when using this package in your publishable work. If `SpookPosL1`, `SpookPosL2` or `SpookL1` is used, we also **strongly recommend** to cite the original OSQP paper as suggested [here](https://osqp.org/citing/).
 
