@@ -1,11 +1,15 @@
 # Spooktroscopy: Spectral-Domain Ghost Imaging
 
 ## Target Problem
-Solve $(A \otimes G)X = B$ in the least-square way, under [regularizations](#Regularizations). A, G are matrices acting on the two dimensions of X, i.e. 
-$\sum_{w,b}A_{iw}G_{bq}X_{wb}=B_{iq}$ .
-For spectral-domain ghost imaging, the $w$ index indicates photon energy, and the other dimension can be properties of the photoproduct, such as electron kinetic energy.
+Solve for $X$ from $(A \otimes G)X = B$ in the least-square manner, under [regularizations](#Regularizations). The full-index representation of the objective to minimize is
+$\sum_{iq}\|\sum_{w,b}A_{iw}G_{bq}X_{wb} - B_{iq}\|^2$ .
+|          Index     | $i$  |        $w$        |           $q$      |     $b$             |
+|--------------------|------|-------------------|--------------------|---------------------|
+|What does it number?| shot | photon energy bin | observed property  | interested property |
+|Example 0           | shot | photon energy bin | kinetic energy     | kinetic energy      |
+|Example 1           | shot | photon energy bin | projected momentum | coefficient on a basis function |
 
-`G` is the (optional) linear operator from (an intensity distribution in) the dimension of interest indexed by $b$ to the dimension of observable indexed by $q$. By default (`G=None`), $G=I$ is the identity matrix. This is the most common use case of spooktroscopy, i.e. to solve $AX=B$ without any extra linear mapping.
+`G` is the (optional) linear operator from (an intensity distribution in) the dimension of interest $b$ to the dimension of observable $q$. By default (`G=None`), $G=I$ is the identity matrix. This is the most common use case of spooktroscopy, i.e. to solve $AX=B$ without any extra linear mapping.
 `G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. 
 
 With `mode='raw'`, pass in matrix $G_{bq}$ to G, and with `mode='contracted'`, pass in matrix $\sum_qG_{bq}G_{b'q}$. For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
