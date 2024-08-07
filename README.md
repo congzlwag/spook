@@ -9,8 +9,9 @@ $\sum_{iq}\|\sum_{w,b}A_{iw}G_{bq}X_{wb} - B_{iq}\|^2$ .
 |Example 0           | shot | photon energy bin | kinetic energy     | kinetic energy      |
 |Example 1           | shot | photon energy bin | projected momentum | coefficient on a basis function |
 
-`G` is the (optional) linear operator from (an intensity distribution in) the dimension of interest $b$ to the dimension of observable $q$. By default (`G=None`), $G=I$ is the identity matrix. This is the most common use case of spooktroscopy, i.e. to solve $AX=B$ without any extra linear mapping.
-`G` can accommodate other linear operations on the $b$ dimension, to solve the two linear inversions in one step. 
+`G` is an optional linear operator from a function of the interested property (discretized by index $b$) to a function of the observed property (discretized by index $q$), e.g. from a KE spectrum to a KE spectrum. 
+By default `G=None`, $G=I$ is the identity matrix. This is the most common use case of spooktroscopy, i.e. to solve $AX=B$ without any extra linear mapping.
+When `G` accommodates a linear operation that's not identity mapping, the two linear inversions are solved in a single step. 
 
 With `mode='raw'`, pass in matrix $G_{bq}$ to G, and with `mode='contracted'`, pass in matrix $\sum_qG_{bq}G_{b'q}$. For example, for Abel transform in Velocity Map Imaging, [pBasex](https://github.com/e-champenois/CPBASEX) offers this G with `loadG`.
 
@@ -25,9 +26,9 @@ At the very bottom level, this package depends on either [OSQP](https://osqp.org
 
 ## Installation
 The stable version is on PyPI. Unfortunately in a different name.
-
-    pip install FDGI
-
+```bash
+pip install FDGI
+```
 ## Solvers
 
 Different combinations of regularizations can lead to different forms of objective function. Solvers in package always formalize the specific problem into either a [Quadratic Programming](https://en.wikipedia.org/wiki/Quadratic_programming) or a linear equation. Examples can be found in [unit tests](#UnitTests) 
