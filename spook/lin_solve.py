@@ -1,27 +1,28 @@
-import scipy.sparse as sps
 import numpy as np
+import scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
+
 from .base import SpookBase
-from .utils import laplacian_square_S #, worth_sparsify
+
 # from memory_profiler import profile
 
 class SpookLinSolve(SpookBase):
     """
     Spooktroscopy that involves only linear eq solving
     This means:
-    no positivity constraint 
+    no positivity constraint
     L2 squared sparsity
     """
     verbose = False
-    _cache_AGtAG = False 
-    # Dominant time complexity comes from linsolve, caching AGtAG is not 
+    _cache_AGtAG = False
+    # Dominant time complexity comes from linsolve, caching AGtAG is not
     # really helpful, so I make it optional.
-    def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1), 
+    def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1),
         **kwargs):
         if 'cache_AGtAG' in kwargs:
             self._cache_AGtAG = kwargs['cache_AGtAG']
             del kwargs['cache_AGtAG']
-        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth, 
+        SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth,
             **kwargs)
         # self._Ng = self.shape['Ng']
         # L = laplacian1D_S(self._Na)
@@ -35,11 +36,14 @@ class SpookLinSolve(SpookBase):
     def setupProb(self):
         need_to_flatten = (self._GtG is not None) or self.lsmooth[1]!=0
         if need_to_flatten:
+            # Flattening the (w, e) indices into a 1D index
             self.__setupProbFlat()
         else:
+            # Set up the problem into Nb sub-problems
             self.__setupProbVec()
 
     def __setupProbVec(self):
+        # Set up the problem into Nb sub-problems
         if self.verbose: print("Set up a vectorized problem")
         assert self._GtG is None and self.lsmooth[1]==0
         self.qhalf = self._Bcontracted
@@ -48,7 +52,7 @@ class SpookLinSolve(SpookBase):
 
     # @profile
     def __setupProbFlat(self):
-        # print("Set up a flattened problem")
+        # Set up a single, flattened problem
         self.qhalf = self._Bcontracted.ravel()
         self.P = self.lsparse * sps.eye(self.Na) + self.Asm()
         self.P = sps.kron(self.P, sps.eye(self.Ng))
@@ -59,6 +63,8 @@ class SpookLinSolve(SpookBase):
         else:
             del tmp # release this temporary memo alloc
         self.P += sps.kron(sps.eye(self.Na), self.lsmooth[1]*self._Bsm)
+        # Convert to CSC format to support self.P[i,i] += delta_lsparse later
+        self.P = sps.csc_matrix(self.P)
 
     def update_lsparse(self, lsparse):
         # Updating lsparse won't change need_to_flatten
