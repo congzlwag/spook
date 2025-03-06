@@ -2,14 +2,20 @@
 @author: congzlwag
 """
 import numpy as np
-from .utils import worth_sparsify, laplacian_square_S
-# from .utils import dict_allsqsum #dict_innerprod, 
-from .contraction_utils import adaptive_contraction, allsqsum, adaptive_dot
-from .utils import calcL2fromContracted, show_lcurve
-from .utils import count_delaybin, eval_Ng, eval_Nw
 import scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
-from scipy.interpolate import interp1d
+
+# from .utils import dict_allsqsum #dict_innerprod,
+from .contraction_utils import adaptive_contraction, adaptive_dot, allsqsum
+from .utils import (
+    calcL2fromContracted,
+    count_delaybin,
+    eval_Ng,
+    eval_Nw,
+    laplacian_square_S,
+    worth_sparsify,
+)
+
 
 class SpookBase:
     """
@@ -22,7 +28,7 @@ class SpookBase:
     """
     smoothness_drop_boundaries = True
     verbose = False
-    def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None, 
+    def __init__(self, B, A, mode="raw", G=None, lsparse=None, lsmooth=None,
         Bsmoother="laplacian", Asmoother="laplacian", normalize=True):
         """
         :param mode: "raw" or "contracted" (recommended) or "ADraw"
@@ -33,7 +39,7 @@ class SpookBase:
                           If 'inplace', then the normalizations are done in-place
                           If (sA, sG), then cache the scale factors and do nothing on the contracted results
                           If False, do nothing and set (sA, sG) = (1,1)
-                          
+
         """
         assert (mode in ['raw', 'contracted', 'ADraw']), f"Unknown mode: {mode}. Must be either 'raw' or 'contracted' or 'ADraw'"
 
@@ -54,7 +60,7 @@ class SpookBase:
             self._Bcontracted = B
             self._GtG = G
             if G is not None:
-                assert (B.shape[-1]==G.shape[-1]), f"Shape mismatch: " + \
+                assert (B.shape[-1]==G.shape[-1]), "Shape mismatch: " + \
                 "In contracted mode, B & G should have the same dimension at axis=-1, but B.shape={B.shape} while G.shape={G.shape}"
         elif mode == 'raw':
             AtA = adaptive_contraction(A, A, keep_dims=True)
@@ -97,7 +103,7 @@ class SpookBase:
             self._Bcontracted = AEtBG.reshape(Nw*Nt,-1)
 
         self.lsparse = lsparse
-        self.lsmooth = lsmooth
+        self.lsmooth = self._parse_lsmooth(lsmooth)
         # self._Na = self._AtA.shape[0]
         if self._GtG is not None and worth_sparsify(self._GtG):
             self._GtG = sps.coo_matrix(self._GtG)
@@ -130,11 +136,11 @@ class SpookBase:
     @property
     def Ng(self):
         # if self._GtG is None:
-        return self._Bcontracted.shape[-1] 
+        return self._Bcontracted.shape[-1]
         # return self._GtG.shape[-1]
 
     def Asm(self):
-        temp = self.lsmooth[0] * self._Asm 
+        temp = self.lsmooth[0] * self._Asm
         if hasattr(self, "_Tsm"):
             temp += self.lsmooth[2] * self._Tsm
         return temp
@@ -229,7 +235,7 @@ class SpookBase:
     def AGtAG(self):
         """
         Tensor product of AtA and GtG
-        Some children classes need this tensor itself, 
+        Some children classes need this tensor itself,
         some need its upper triangular part only,
         so I make it a non-cache property
         A child class can cache it/its upper triangular part if necessary
@@ -261,10 +267,10 @@ class SpookBase:
         #     return rl2 * self.AGscale
         return rl2
 
-    def sparsity(self, X=None):
-        if X is None:
-            X = self.res
-        return self._spfunc(X)
+    # def sparsity(self, X=None):
+    #     if X is None:
+    #         X = self.res
+    #     return self._spfunc(X)
 
     def accumulate(self, AtA_batch, Bcontracted_batch):
         assert (self.__Ascale, self.__Gscale) == (1,1), "Don't accumulate on normalized spook instance"
@@ -288,7 +294,14 @@ class SpookBase:
         ret['Bcontracted'] = self._Bcontracted * AG
         ret['GtG'] = self._GtG * G2 if self._GtG is not None else None
         return ret
-        
+
+    def _parse_lsmooth(self, lsmooth):
+        if lsmooth is None:
+            return (1e-16, 1e-16)
+        if isinstance(lsmooth, (int, float)):
+            return (lsmooth, 0)
+        return lsmooth
+
 if __name__ == '__main__':
     np.random.seed(1996)
     Ardm = np.random.randn(1000,30)
@@ -316,7 +329,7 @@ if __name__ == '__main__':
     # B0_dict = {}
     # B1_dict = {}
     # for j, a in enumerate(Ardm):
-    #     A_dict[j] = a 
+    #     A_dict[j] = a
     #     B0_dict[j] = B0[j]
     #     B1_dict[j] = B1[j]
 
