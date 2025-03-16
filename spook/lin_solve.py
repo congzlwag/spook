@@ -15,8 +15,8 @@ class SpookLinSolve(SpookBase):
     """
     verbose = False
     _cache_AGtAG = False
-    # Dominant time complexity comes from linsolve, caching AGtAG is not
-    # really helpful, so I make it optional.
+    # Dominant time complexity comes from linsolve, caching AGtAG is
+    # not helpful, so I make it optional.
     def __init__(self, B, A, mode="raw", G=None, lsparse=1, lsmooth=(0.1,0.1),
         **kwargs):
         if 'cache_AGtAG' in kwargs:
@@ -24,12 +24,6 @@ class SpookLinSolve(SpookBase):
             del kwargs['cache_AGtAG']
         SpookBase.__init__(self, B, A, mode=mode, G=G, lsparse=lsparse, lsmooth=lsmooth,
             **kwargs)
-        # self._Ng = self.shape['Ng']
-        # L = laplacian1D_S(self._Na)
-        # self._La2 = laplacian_square_S(self._Na, self.smoothness_drop_boundaries)
-        # self._Bsm = Bsmoother
-        # if isinstance(Bsmoother, str) and Bsmoother == "laplacian":
-        #     self._Bsm = laplacian_square_S(self._Ng, self.smoothness_drop_boundaries)
         self.setupProb()
         self._spfunc = lambda X: (X**2).sum()
 
