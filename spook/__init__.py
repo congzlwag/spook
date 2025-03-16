@@ -7,4 +7,4 @@ from . import utils
 
 SpookL2 = SpookLinSolve # alias for consistency with other solvers
 
-__version__ = '0.9.4'
+__version__ = '1.0.0'
