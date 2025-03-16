@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 import scipy.sparse as sps
 import numpy as np
-# from scipy.sparse.linalg import spsolve
 import osqp
 from .base import SpookBase
 from .utils import iso_struct
 
 class SpookQPBase(SpookBase):
     verbose = False
-    def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1), 
+    def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1),
         **kwargs):
-        SpookBase.__init__(self, B, A, mode=mode, G=G, 
+        SpookBase.__init__(self, B, A, mode=mode, G=G,
                 lsparse=lsparse, lsmooth=lsmooth, **kwargs)
         Ng = self.Ng
-        if not (G is None and lsmooth[1]==0 and Ng>1):
+        if not (G is None and self.lsmooth[1]==0 and Ng>1):
             self._Pcore = sps.triu(self.AGtAG, 0, "csc")
             # self._qhalf = - self._Bcontracted.ravel()
             # To compare a new P with the current one, it is more efficient to
@@ -34,11 +33,11 @@ class SpookQPBase(SpookBase):
         """
         CALCULATE Total Smoothness regularization operator
         lsma * (La.T @ La otimes Ib) + lsmb * (Ia otimes Bsmoother)
-        
+
         This method always recalculates
 
         Returns:
-            The upper triangular part of tensor product matrix, 
+            The upper triangular part of tensor product matrix,
             so DON'T use if the solver is vectorized over dimension b
         """
         Asm = self.Asm()
@@ -83,7 +82,7 @@ class SpookQPBase(SpookBase):
                 self._prob = self.setupProb()
             else:
                 self._probs = [self.setupProb(col) for col in range(self.Ng)]
-            
+
     def set_polish(self, polish_bool=True):
         if hasattr(self, "_prob"):
             self._prob.update_settings(polish=polish_bool)
@@ -98,9 +97,9 @@ class SpookQPBase(SpookBase):
             return - self._Bcontracted[...,col].ravel()
 
     def update_lsmooth(self, lsmooth):
-        assert len(lsmooth) == len(self.NaTuple)+1
-        self.lsmooth = lsmooth
-        if hasattr(self, '_probs') and lsmooth[1]!=0:
+        self.lsmooth = self._parse_lsmooth(lsmooth)
+        assert len(self.lsmooth) == len(self.NaTuple)+1
+        if hasattr(self, '_probs') and self.lsmooth[1]!=0:
             if self.verbose: print("Resetting problem to be flattened")
             del self._probs
             self._Pcore = sps.triu(self.AGtAG, 0, "csc")
@@ -108,7 +107,7 @@ class SpookQPBase(SpookBase):
             self._prob = self.setupProb()
         else:
             Pnew = self.calcPtriu()
-            self._update_Pmat(Pnew) 
+            self._update_Pmat(Pnew)
 
 class SpookPos(SpookQPBase):
     """
@@ -119,7 +118,7 @@ class SpookPos(SpookQPBase):
     def initProb(self):
         """
         Create a new OSQP problem
-        Upper triangular part of self._P is used in OSQP.setup(), 
+        Upper triangular part of self._P is used in OSQP.setup(),
         regardless of whether self._P is dense or sparse
         Child class call this to get bounds and OSQP instance
         """
@@ -153,7 +152,7 @@ class SpookPosL1(SpookPos):
     def setupProb(self, col=None):
         """
         Create a new OSQP problem
-        Upper triangular part of self._P is used in OSQP.setup(), 
+        Upper triangular part of self._P is used in OSQP.setup(),
         regardless of whether self._P is dense or sparse
         """
         self._spfunc = lambda X: abs(X).sum()
@@ -179,11 +178,6 @@ class SpookPosL1(SpookPos):
                 prob.update(q = qhalf + 0.5*self.lsparse)
         if self.verbose: print("Sparsity hyperparam updated.")
 
-    # def update_lsmooth(self, lsmooth):
-    #     self.lsmooth = lsmooth
-    #     Pnew = self.calcPtriu()
-    #     self._update_Pmat(Pnew)
-
     # def sparsity(self, X=None):
     #     if X is None:
     #         X = self.res
@@ -204,7 +198,7 @@ class SpookPosL2(SpookPos):
     def setupProb(self, col=None):
         """
         Create a new OSQP problem
-        Upper triangular part of self._P is used in OSQP.setup(), 
+        Upper triangular part of self._P is used in OSQP.setup(),
         regardless of whether self._P is dense or sparse
         """
         self._spfunc = lambda X: (X**2).sum()
@@ -223,14 +217,10 @@ class SpookPosL2(SpookPos):
         self.lsparse = lsparse
         self._update_Pmat(Pnew)
 
-    # def update_lsmooth(self, lsmooth):
-    #     self.lsmooth = lsmooth
-    #     Pnew = self.calcPtriu()
-    #     self._update_Pmat(Pnew)
 
 class SpookL1(SpookQPBase):
     """
-    L1 sparsity w/o non-negativity. 
+    L1 sparsity w/o non-negativity.
     This is lasso, which requires auxilary variables
     """
     def calcPtriu(self):
@@ -242,7 +232,7 @@ class SpookL1(SpookQPBase):
     def setupProb(self,col=None):
         """
         Create a new OSQP problem
-        Upper triangular part of self._P is used in OSQP.setup(), 
+        Upper triangular part of self._P is used in OSQP.setup(),
         regardless of whether self._P is dense or sparse
         """
         self._spfunc = lambda X: abs(X).sum()
@@ -276,9 +266,3 @@ class SpookL1(SpookQPBase):
                 q = np.concatenate((qhalf, 0.5*self.lsparse * np.ones_like(qhalf)))
                 prob.update(q = q)
         if self.verbose: print("Sparsity hyperparam updated.")
-
-    # def update_lsmooth(self, lsmooth):
-    #     self.lsmooth = lsmooth
-    #     Pnew = self.calcPtriu()
-    #     self._update_Pmat(Pnew) 
-

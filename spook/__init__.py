@@ -5,4 +5,6 @@ from . import utils
 # from . __version__ import __version__
 # from spook.vmi_special import PhotonFreqResVMI
 
+SpookL2 = SpookLinSolve # alias for consistency with other solvers
+
 __version__ = '0.9.4'
