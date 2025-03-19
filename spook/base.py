@@ -311,13 +311,19 @@ class SpookBase:
         return lsmooth
 
     def sparsity(self, X=None):
-        raise NotImplementedError("Sparsity function should be defined in each user-facing class.")
+        """
+        L2 norm of the solution. No square, no lsparse*.
+        """
+        if X is None:
+            X = self.getXopt()
+        return np.sum(X**2)**0.5
 
     def smoothness(self, X=None, dim='w'):
         """
         Evaluate the smoothness of variable X, along the dimension dim.
         The smoothness is defined as sqrt(X.T @ LL @ X), where LL is the smoothness operator
             by default LL is the square of finite difference Laplacian operator.
+            No lsmooth* is applied.
         :param X: the solution to evaluate
         :param dim: 'w' or 'b' or 't'
             'w': along the photon frequency axis

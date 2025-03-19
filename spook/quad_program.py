@@ -186,6 +186,9 @@ class SpookPosL1(SpookPos):
             print("Sparsity hyperparam updated.")
 
     def sparsity(self, X=None):
+        """
+        L1 norm of X. No lsparse* applied.
+        """
         if X is None:
             X = self.getXopt()
         return abs(X).sum()
@@ -223,11 +226,6 @@ class SpookPosL2(SpookPos):
         Pnew = self._P + (sps.eye(self._Pcore.shape[0])*(lsparse-self.lsparse)).tocsc()
         self.lsparse = lsparse
         self._update_Pmat(Pnew)
-
-    def sparsity(self, X=None):
-        if X is None:
-            X = self.getXopt()
-        return np.sum(X**2)**0.5
 
 class SpookL1(SpookQPBase):
     """
@@ -281,6 +279,9 @@ class SpookL1(SpookQPBase):
             print("Sparsity hyperparam updated.")
 
     def sparsity(self, X=None):
+        """
+        L1 norm of X. No lsparse* applied.
+        """
         if X is None:
             X = self.res / self.AGscale
         return abs(X).sum()

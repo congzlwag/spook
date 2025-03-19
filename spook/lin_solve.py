@@ -83,8 +83,3 @@ class SpookLinSolve(SpookBase):
             self.res = np.linalg.solve(self.P, self.qhalf)
         else:
             self.res = spsolve(self.P, self.qhalf)
-
-    def sparsity(self, X=None):
-        if X is None:
-            X = self.getXopt()
-        return np.sum(X**2)**0.5
