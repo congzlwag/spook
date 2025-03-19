@@ -11,10 +11,13 @@ from .utils import iso_struct
 class SpookQPBase(SpookBase):
     verbose = False
     def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1),
-        **kwargs):
+        osqp_settings={}, **kwargs):
         SpookBase.__init__(self, B, A, mode=mode, G=G,
                 lsparse=lsparse, lsmooth=lsmooth, **kwargs)
         Ng = self.Ng
+        self._osqp_settings = osqp_settings
+        if 'verbose' not in osqp_settings:
+            self._osqp_settings['verbose'] = self.verbose
         if not (G is None and self.lsmooth[1]==0 and Ng>1):
             self._Pcore = sps.triu(self.AGtAG, 0, "csc")
             # self._qhalf = - self._Bcontracted.ravel()
@@ -160,7 +163,8 @@ class SpookPosL1(SpookPos):
         self._spfunc = lambda X: abs(X).sum()
         prob, eye, lb, ub = SpookPos.initProb(self)
         P = self._P # calculated in SpookPos.__init__
-        prob.setup(P, self.qhalf(col) + 0.5*self.lsparse, eye, lb, ub, verbose=False)
+        prob.setup(P, self.qhalf(col) + 0.5*self.lsparse,
+                   eye, lb, ub, **(self._osqp_settings))
         # the factor of 0.5 comes from the convention of OSQP
         return prob
 
@@ -205,7 +209,8 @@ class SpookPosL2(SpookPos):
         """
         self._spfunc = lambda X: (X**2).sum()
         prob, eye, lb, ub = SpookPos.initProb(self)
-        prob.setup(self._P, self.qhalf(col), eye, lb, ub, verbose=False)
+        prob.setup(self._P, self.qhalf(col),
+                   eye, lb, ub, **(self._osqp_settings))
         # the factor of 0.5 comes from the convention of OSQP
         return prob
 
@@ -251,7 +256,7 @@ class SpookL1(SpookQPBase):
         eye = sps.bmat([[eye,eye],[-eye,eye]],'csc') # This captures the absolute value function
         q = np.concatenate((self.qhalf(col), 0.5*self.lsparse * np.ones(Nag)))
         prob = osqp.OSQP()
-        prob.setup(self._P, q, eye, lb, ub, verbose=False)
+        prob.setup(self._P, q, eye, lb, ub, **(self._osqp_settings))
         return prob
 
     def solve(self, lsparse=None, lsmooth=None):
