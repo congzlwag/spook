@@ -19,12 +19,7 @@ from .utils import (
 
 class SpookBase:
     """
-    Base class for Spooktroscopy
-    Simply pseudoinverse the core problem
-    (A otimes G) X = B
-    A is shot-dependent (#shot, Na)
-    B is a <=2d array (#shot, Nb)
-    G is a shot-independent optional operator on the dimension Nb
+    Base class for Spook solvers
     """
     smoothness_drop_boundaries = True
     verbose = False
@@ -120,41 +115,40 @@ class SpookBase:
             self._Tsm = sps.kron(sps.eye(self.NaTuple[0]), self._Tsm)
             self._Asm = sps.kron(self._Asm, sps.eye(self.NaTuple[1]))
         self.normalizeAG(normalize)
-#         print("At the end of __init__, __Ascale =", self.__Ascale)
-
 
     @property
     def Na(self):
-        # if self._AtA is None:
-        #     return self.__Na
+        """
+        Dimension of single-shot A
+        """
         return np.prod(self.__NaTuple)
 
     @property
     def NaTuple(self):
+        """
+        Shape of single-shot A.
+        Most frequently, it is (Nw,)
+        But in the case of delay binning, it is (Nw, Nt)
+        """
         return self.__NaTuple
 
     @property
     def Ng(self):
-        # if self._GtG is None:
+        """
+        (Dimension of X) / Na
+        """
         return self._Bcontracted.shape[-1]
-        # return self._GtG.shape[-1]
 
     def Asm(self):
         temp = self.lsmooth[0] * self._Asm
         if hasattr(self, "_Tsm"):
             temp += self.lsmooth[2] * self._Tsm
         return temp
-    # @property
-    # def shape(self):
-    #     ret = {"Na": self._Na, "Ng": self._Bcontracted.shape[1] if self._GtG is None else self._GtG.shape[1]}
-    #     if self._GtG is None:
-    #         ret['Nb'] = ret['Ng']
-    #     return ret
 
     def solve(self, lsparse=None, lsmooth=None):
         """
-        Just for the base class
-        Please Redefine for every derived class
+        ONLY for the base class
+        For every derived class, PLEASE REDEFINE!
         """
         self._updateHyperParams(lsparse, lsmooth)
         tmp = np.linalg.solve(self._AtA, self._Bcontracted)
@@ -166,17 +160,25 @@ class SpookBase:
             else:
                 self.res = spsolve(self._GtG.tocsc(), tmp.T).T
 
-    def getXopt(self, lsparse=None, lsmooth=None):
+    def getXopt(self, lsparse=None, lsmooth=None, orig_scale=True):
+        """
+        Solve for the optimal X,
+        Parameters
+        ------------
+        lsparse: float|None,  lsmooth: float|tuple|None
+            The regularization hyperparameters
+        orig_scale: bool
+            whether to scale it back to the original scale
+        """
         updated = self._updateHyperParams(lsparse, lsmooth)
-        if updated and self.verbose: print("Updated")
+        if updated and self.verbose:
+            print("Updated")
         if updated or not hasattr(self,'res'):
             self.solve(None, None)
-        return self.res.reshape((*(self.NaTuple), -1)) / self.AGscale
-        # Xo /= (self.__Ascale*self.__Gscale)
-        # return Xo
-
-    def sparsity(self, X=None):
-        raise NotImplementedError("Sparsity function should be defined in the child class.")
+        Xopt_scaled = self.res.reshape((*(self.NaTuple), -1))
+        if orig_scale:
+            return  Xopt_scaled / self.AGscale
+        return Xopt_scaled
 
     def update_lsparse(self, lsparse):
         """ To be redefined in each derived class
@@ -187,7 +189,6 @@ class SpookBase:
         self.lsmooth = lsmooth
 
     def _updateHyperParams(self, lsparse, lsmooth):
-        # print("updating")
         ret = False
         if lsparse is not None and lsparse != self.lsparse:
             self.update_lsparse(lsparse)
@@ -248,29 +249,36 @@ class SpookBase:
         else:
             return sps.kron(self._AtA, GtG)
 
-    def residueL2(self, Tr_BtB=None):
+    def residueL2(self, X=None):
         """
-        Calculate the L2 norm of the residue.
-        |(A otimes G)X - B|_2
-        With A & G normalized
+        Calculate the rmse of the linear model given variable X, in the original (unscaled) problem
+        rmse = |(A otimes G)X - B|_2
+        Parameters
+        ----------
+        X : np.ndarray
+            Optimization (unscaled) variable. If None, use the last solved X
         """
-        Xo = self.res.reshape((self.Na, -1))
+        if X is None:
+            Xo_scaled = self.getXopt(orig_scale=False)
+        else:
+            Xo_scaled = X * self.AGscale
         if hasattr(self, "_TrBtB") and self._TrBtB is not None: # Then this is tr(B.T @ B) / scalefactor
             const = self._TrBtB
-        elif Tr_BtB is not None:
-            self._TrBtB = Tr_BtB
-            const = Tr_BtB
         else:
-            raise ValueError("Please input tr(B.T @ B) through param:Tr_BtB")
-        rl2 = calcL2fromContracted(Xo, self._AtA, self._Bcontracted, const, self._GtG)
-        # if not normalized: # back to the original scale
-        #     return rl2 * self.AGscale
+            raise ValueError("Please set the constant term in the quadratic form through method:set_btb")
+        # Because self._AtA, self._GtG, and self._Bcontracted are all scaled, Xo_scaled is scaled too
+        rl2 = calcL2fromContracted(Xo_scaled.reshape((self.Na, -1)),
+                                   self._AtA, self._Bcontracted, const, self._GtG)
+        # rl2 is the residue L2 norm, of the original (unscaled) problem.
         return rl2
 
-    # def sparsity(self, X=None):
-    #     if X is None:
-    #         X = self.res
-    #     return self._spfunc(X)
+    def set_btb(self, btb: float):
+        """
+        Set the constant term in the quadratic form
+        For 1D problem, btb is the sum of b^2 across all shots
+        For 2D problem, btb is the sum of b^2 across all shots and all KE bins
+        """
+        self._TrBtB = btb
 
     def accumulate(self, AtA_batch, Bcontracted_batch):
         assert (self.__Ascale, self.__Gscale) == (1,1), "Don't accumulate on normalized spook instance"
@@ -295,55 +303,39 @@ class SpookBase:
         ret['GtG'] = self._GtG * G2 if self._GtG is not None else None
         return ret
 
-    def _parse_lsmooth(self, lsmooth):
+    def _parse_lsmooth(self, lsmooth: [float|tuple|None]):
         if lsmooth is None:
             return (1e-16, 1e-16)
         if isinstance(lsmooth, (int, float)):
             return (lsmooth, 0)
         return lsmooth
 
-if __name__ == '__main__':
-    np.random.seed(1996)
-    Ardm = np.random.randn(1000,30)
-    Xtrue = np.random.randn(30,10)
-    G = np.random.rand(20,10)
-    B0 = Ardm @ Xtrue
-    B1 = B0 @ (G.T)
+    def sparsity(self, X=None):
+        raise NotImplementedError("Sparsity function should be defined in each user-facing class.")
 
-    spkraw0 = SpookBase(B0, Ardm)
-    spkraw1 = SpookBase(B1, Ardm, G=G)
+    def smoothness(self, X=None, dim='w'):
+        """
+        Evaluate the smoothness of variable X, along the dimension dim.
+        The smoothness is defined as sqrt(X.T @ LL @ X), where LL is the smoothness operator
+            by default LL is the square of finite difference Laplacian operator.
+        :param X: the solution to evaluate
+        :param dim: 'w' or 'b' or 't'
+            'w': along the photon frequency axis
+            'b': along the interested property axis
+            't': along the delay axis (if applicable)
+        """
+        if X is None:
+            X = self.getXopt().reshape((self.Na, -1))
+        if dim == 'b':
+            sm_l2 = X @ self._Bsm # shape=(Na, Ng)
+            return np.sum(X * sm_l2)**0.5
 
-    X0 = spkraw0.getXopt()
-    X1 = spkraw1.getXopt()
-
-    # print(np.allclose(Xtrue, X0), np.allclose(Xtrue, X1))
-
-    # AtA = Ardm.T @ Ardm
-    # spkctr0 = SpookBase(Ardm.T @ B0, AtA, "contracted")
-    # spkctr1 = SpookBase(Ardm.T @ B1 @ G, AtA, "contracted", G=G.T @ G)
-    # X0 = spkctr0.getXopt()
-    # X1 = spkctr1.getXopt()
-    # print(np.allclose(Xtrue, X0), np.allclose(Xtrue, X1))
-
-    # A_dict = {}
-    # B0_dict = {}
-    # B1_dict = {}
-    # for j, a in enumerate(Ardm):
-    #     A_dict[j] = a
-    #     B0_dict[j] = B0[j]
-    #     B1_dict[j] = B1[j]
-
-    # spk0 = SpookBase(B0_dict, A_dict, "raw")
-    # Xd0 = spk0.getXopt()
-    # spk1 = SpookBase(B1_dict, A_dict, "raw", G)
-    # Xd1 = spk1.getXopt()
-
-    # print(np.allclose(Xtrue, Xd0), np.allclose(Xtrue, Xd1))
-
-    shape_dct = spkraw1.shape
-    Na = shape_dct['Na']
-    Ns = Ardm.shape[0]
-    Nb = B1.shape[1]
-    Ng = shape_dct["Ng"]
-    print(Na, Ns, Nb, Ng)
-    print(Na*Nb * (Ns+Ng) >= Ns*Ng * (Na+Nb))
+        if dim == 'w':
+            ltensor = self._Asm
+        elif dim == 't':
+            ltensor = self._Tsm
+        else:
+            raise ValueError("Unknown dimension: "+dim)
+        sm_l2 = ltensor @ X # shape=(Na, Ng)
+        sm_l2 = np.sum(X * sm_l2)
+        return sm_l2**0.5

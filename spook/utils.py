@@ -1,5 +1,7 @@
 import numpy as np
 import scipy.sparse as sps
+from scipy.interpolate import interp1d
+
 # from matplotlib import pyplot as plt
 
 def laplacian1D_S(N):
@@ -19,9 +21,21 @@ def laplacian_square_S(N, drop_bound):
 
 def worth_sparsify(arr):
     if isinstance(arr, np.ndarray):
-        return 3*(arr!=0).sum() < arr.size 
+        return 3*(arr!=0).sum() < arr.size
     elif isinstance(arr, sps.spmatrix):
         return 3*arr.nnz < np.prod(arr.shape)
+
+
+def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
+    quad = Xo.T @ AtA @ Xo
+    if GtG is None:
+        quad = np.trace(quad)
+    else:
+        quad = np.trace(quad @ GtG)
+    lin = -2 * np.trace(Xo.T @ Bcontracted) # This covered the contraction with G
+    const = trBtB
+    rl2 = (max(quad+lin+const,0))**0.5
+    return rl2
 
 def matricize_tensor_bykey(dct, ky_list, roi=None):
     N1 = np.prod(dct[ky_list[0]].shape) if roi is None else np.ptp(roi)
@@ -36,7 +50,7 @@ def matricize_tensor_bykey(dct, ky_list, roi=None):
 
 def dict_innerprod(dictA, dictB, Aroi=None):
     """
-    Inner product of two tensors represented as dictionaries, 
+    Inner product of two tensors represented as dictionaries,
     with the contracted dimension being the keys.
     """
     lsta, keys = (list(dictA.keys()), list(dictB.keys()))
@@ -60,7 +74,7 @@ def dict_innerprod(dictA, dictB, Aroi=None):
         res = 0
         chunk_size = 1000
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
-        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
+        key_segs = key_segments
         for ky_seg in key_segs:
             A = matricize_tensor_bykey(dictA, ky_seg, Aroi)
             B = matricize_tensor_bykey(dictB, ky_seg)
@@ -76,7 +90,7 @@ def dict_allsqsum(dictB):
         res = 0
         chunk_size = 1000
         key_segments = np.array_split(np.asarray(keys), len(keys)//chunk_size+1)
-        key_segs = key_segments if not ('tqdm' in globals()) else tqdm(key_segments)
+        key_segs = key_segments
         for ky_seg in key_segs:
             B = matricize_tensor_bykey(dictB, ky_seg)
             res += (B**2).sum()
@@ -94,34 +108,6 @@ def iso_struct(csc_mata, csc_matb):
         return False
     res = res.all() and (csc_mata.indptr == csc_matb.indptr).all()
     return res
-
-# def normalizedATA(A):
-#     """
-#     This will normalize A (not in situ normalization) such that
-#     sum(A_{ij}^2)/N_A = 1
-#     i.e. pixel-averaged but shot-accumulated A^2 is 1
-#     """
-#     AtA = (A.T) @ A
-#     scaleA = (np.trace(AtA) / (A.shape[1]))**0.5 # px-wise mean-square
-#     AtA /= (scaleA**2)
-#     return AtA, scaleA
-
-# def normalizedB(B):
-#     """
-#     This will normalize B (not in situ normalization) such that
-#     sum(B_{ij}^2)/N_B = 1
-#     i.e. pixel-averaged but shot-accumulated B^2 is 1
-#     """
-#     scaleB = np.linalg.norm(B,"fro") / (B.shape[1]**0.5)
-#     return B/scaleB, scaleB
-
-# def comboNormalize(A, B, return_scalefactors=False):
-#     AtA, scaleA = normalizedATA(A)
-#     tmp, scaleB = normalizedB(B)
-#     AtB = (A/scaleA).T @ tmp
-#     if return_scalefactors:
-#         return AtA, AtB, scaleA, scaleB
-#     return AtA, AtB
 
 def count_delaybin(at_iter):
     at_vals = at_iter.values() if isinstance(at_iter, dict) else at_iter
@@ -142,18 +128,6 @@ def eval_Ng(b_iter):
             return b0.size
     return b_iter[0].size
 
-def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
-    quad = Xo.T @ AtA @ Xo
-    if GtG is None:
-        quad = np.trace(quad)
-    else:
-        quad = np.trace(quad @ GtG)
-    lin = -2 * np.trace(Xo.T @ Bcontracted) # This covered the contraction with G
-    const = trBtB
-    rl2 = (max(quad+lin+const,0))**0.5
-    # if not normalized: # back to the original scale
-    #     return rl2 * self.AGscale
-    return rl2
 
 def scan_lsparse(spk, lsparse_list, calc_curvature=True, plot=False):
     assert hasattr(spk, "_TrBtB") and spk._TrBtB > 0, "To scan l_sparse, make sure spk._TrBtB is cached."
