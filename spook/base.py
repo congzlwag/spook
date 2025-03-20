@@ -193,7 +193,7 @@ class SpookBase:
         if lsparse is not None and lsparse != self.lsparse:
             self.update_lsparse(lsparse)
             ret = True
-        if lsmooth is not None and lsmooth != self.lsmooth:
+        if lsmooth is not None and self._parse_lsmooth(lsmooth) != self.lsmooth:
             self.update_lsmooth(lsmooth)
             ret = True
         return ret
@@ -308,6 +308,8 @@ class SpookBase:
             return (1e-16, 1e-16)
         if isinstance(lsmooth, (int, float)):
             return (lsmooth, 0)
+        if isinstance(lsmooth, tuple) and len(lsmooth)==1:
+            return (lsmooth[0], 0)
         return lsmooth
 
     def sparsity(self, X=None):

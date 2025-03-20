@@ -37,9 +37,9 @@ Examples can be found in [unit tests](#UnitTests)
 
 | Nonnegativity | Sparsity            | Smoothness | Solver              | Notes                                                        |
 | ------------- | ------------------- | ---------- | ------------------- | ------------------------------------------------------------ |
-| True          | L1 or False         | Quadratic  | `SpookPosL1`        | This solver can serve tasks like in [Li _et al_](https://iopscience.iop.org/article/10.1088/1361-6455/abcdf1) |
+| True          | L1                  | Quadratic  | `SpookPosL1`        | This solver can serve tasks like in [Li _et al_](https://iopscience.iop.org/article/10.1088/1361-6455/abcdf1) |
 | True          | L2 squared          | Quadratic  | `SpookPosL2` |                                                              |
-| False         | L2 squared or False | Quadratic  | `SpookLinSolve`     | This solver is so far the work-horse for SpookVMI            |
+| False         | L2 squared          | Quadratic  | `SpookLinSolve`     | This solver is so far the work-horse for SpookVMI            |
 | False         | L1                  | Quadratic  | `SpookL1` |                                                              |
 
 A family tree of solvers is in `figs/famtree.svg`.
