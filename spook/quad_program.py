@@ -53,6 +53,9 @@ class SpookQPBase(SpookBase):
         return temp.tocsc()
 
     def solve(self, lsparse=None, lsmooth=None):
+        """
+        Solve the quadratic program
+        """
         self._updateHyperParams(lsparse, lsmooth)
         if self.verbose: print("Solving Quad. Prog.")
         self.res = []

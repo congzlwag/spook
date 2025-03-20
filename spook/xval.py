@@ -59,15 +59,12 @@ class XValidation:
         if isinstance(hyperparams, tuple):
             assert len(hyperparams) == 2, "Each hyperparam must be in the form of (lsparse, lsmooth)"
         elif isinstance(hyperparams, np.ndarray):
-            # breakpoint()
             assert hyperparams.ndim == 1 and hyperparams.size >= 2, "Each hyperparam must be in the form of (lsparse, lsmooth1, lsmooth2, ...)"
             hyperparams = (hyperparams[0], tuple(hyperparams[1:]))
         val_resid = np.zeros(self.k)
         for s, spk in enumerate(self._spksolvers):
-            # breakpoint()
             X = spk.getXopt(*hyperparams).reshape((spk.Na, -1))
             pctr = spk.precontracted[dset]
-            # breakpoint()
             val_resid[s] = calcL2fromContracted(X, pctr[0], pctr[1], pctr[2], spk._GtG)
         if avg:
             return np.mean(val_resid**2)**0.5 # averaging of L2 norm should be rms

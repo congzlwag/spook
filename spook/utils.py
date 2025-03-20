@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.sparse as sps
-from scipy.interpolate import interp1d
 
 # from matplotlib import pyplot as plt
 
@@ -27,6 +26,16 @@ def worth_sparsify(arr):
 
 
 def calcL2fromContracted(Xo, AtA, Bcontracted, trBtB, GtG=None):
+    """
+    Calculates the residual L2 norm from the contracted tensors.
+    Parameters
+    ------
+    Xo: ndarray, value of the optimization variable
+    AtA: ndarray, AtA matrix
+    Bcontracted: ndarray, AtB matrix if G is None, otherwise Bcontracted = AtB @ G
+    trBtB: float, constant in the mean square error
+    GtG: ndarray, (optional) GtG matrix. If None, it means G=identity
+    """
     quad = Xo.T @ AtA @ Xo
     if GtG is None:
         quad = np.trace(quad)
@@ -129,63 +138,63 @@ def eval_Ng(b_iter):
     return b_iter[0].size
 
 
-def scan_lsparse(spk, lsparse_list, calc_curvature=True, plot=False):
-    assert hasattr(spk, "_TrBtB") and spk._TrBtB > 0, "To scan l_sparse, make sure spk._TrBtB is cached."
-    res = np.zeros((len(lsparse_list),3))
-    for ll, lsp in enumerate(lsparse_list):
-        spk.solve(lsp, None)
-        res[ll,:] = [lsp, spk.residueL2(), spk.sparsity()]
-    idc = np.argsort(res[:,0])
-    res = res[idc]
-    if not calc_curvature:
-        return res
-    Ninterp_min = 101 # Minimal Number of points in interpolation
-    margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
-    res_alllg = np.log10(res)
-    spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
-    ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
-    # Try using spl._spline.derivative
-    rr = np.asarray([s(ll) for s in spls])
-    tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
-    qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
-    kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
-    ss = np.linalg.norm(tt, axis=0).ravel()
-    kk /= ss**3 # curvature
-    curv_dat = np.vstack((ll,rr,ss,kk)).T
-    valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
-    curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
-    # print(plot)
-    if plot:
-        # print("Calling show_lcurve")
-        show_lcurve(res_alllg, curv_dat, plot)
-    idM = np.argmax(curv_dat[:,-1])
-    print(curv_dat[idM,0])
-    spk.solve(10**(curv_dat[idM,0]), None)
-    return res, curv_dat
+# def scan_lsparse(spk, lsparse_list, calc_curvature=True, plot=False):
+#     assert hasattr(spk, "_TrBtB") and spk._TrBtB > 0, "To scan l_sparse, make sure spk._TrBtB is cached."
+#     res = np.zeros((len(lsparse_list),3))
+#     for ll, lsp in enumerate(lsparse_list):
+#         spk.solve(lsp, None)
+#         res[ll,:] = [lsp, spk.residueL2(), spk.sparsity()]
+#     idc = np.argsort(res[:,0])
+#     res = res[idc]
+#     if not calc_curvature:
+#         return res
+#     Ninterp_min = 101 # Minimal Number of points in interpolation
+#     margin = 2  # Number of interpolated points to be ignored at the boundaries during differentiation
+#     res_alllg = np.log10(res)
+#     spls = [interp1d(res_alllg[:,0],res_alllg[:,i],"cubic",fill_value="extrapolate") for i in range(1,3)]
+#     ll = np.linspace(res_alllg[0,0],res_alllg[-1,0],max(2*len(lsparse_list)-1,Ninterp_min))[margin:-margin]
+#     # Try using spl._spline.derivative
+#     rr = np.asarray([s(ll) for s in spls])
+#     tt = np.asarray([(s._spline.derivative(1))(ll) for s in spls])
+#     qq = np.asarray([(s._spline.derivative(2))(ll) for s in spls])
+#     kk = np.cross(tt,qq,axisa=0,axisb=0).ravel()
+#     ss = np.linalg.norm(tt, axis=0).ravel()
+#     kk /= ss**3 # curvature
+#     curv_dat = np.vstack((ll,rr,ss,kk)).T
+#     valid_lam_range = np.arange(ll.size)[ss > 1e-2*ss.max()]
+#     curv_dat = curv_dat[valid_lam_range[0]:valid_lam_range[-1]+1]
+#     # print(plot)
+#     if plot:
+#         # print("Calling show_lcurve")
+#         show_lcurve(res_alllg, curv_dat, plot)
+#     idM = np.argmax(curv_dat[:,-1])
+#     print(curv_dat[idM,0])
+#     spk.solve(10**(curv_dat[idM,0]), None)
+#     return res, curv_dat
 
-def show_lcurve(log_scan_results, curv_dat, fig):
-    """
-    Plot the data in a L-curve scan.
-    """
-    ax0 = fig.add_subplot(1,2,1)
-    sc = ax0.scatter(log_scan_results[:,1],log_scan_results[:,2], c=log_scan_results[:,0])
-    cax = fig.colorbar(sc,ax=ax0)
-    cax.set_label(r"$\lg \lambda_{sp}$")
-    ax0.plot(curv_dat[:,1],curv_dat[:,2],'k')
-    ax0.set_xlabel(r"$\lg \|AX-B\|_2$")
-    ax0.set_ylabel(r"$\lg h_{sp}(X)$")
-    ax2 = fig.add_subplot(2,2,2)
-    ax2.plot(curv_dat[:,0],curv_dat[:,3])
-    ax2.set_ylabel(r"|Tangent Vec|")
-    ax3 = fig.add_subplot(2,2,4)
-    ax3.plot(curv_dat[:,0],curv_dat[:,4])
-    ax3.set_xlabel(r"$\lg \lambda_{sp}$")
-    ax3.set_ylabel(r"Curvature")
-    idM = np.argmax(curv_dat[:,-1])
-    ax0.plot(curv_dat[idM,1],curv_dat[idM,2], "r+")
-    ax3.plot(curv_dat[idM,0],curv_dat[idM,4], "r+")
-    fig.tight_layout()
-    return fig, idM
+# def show_lcurve(log_scan_results, curv_dat, fig):
+#     """
+#     Plot the data in a L-curve scan.
+#     """
+#     ax0 = fig.add_subplot(1,2,1)
+#     sc = ax0.scatter(log_scan_results[:,1],log_scan_results[:,2], c=log_scan_results[:,0])
+#     cax = fig.colorbar(sc,ax=ax0)
+#     cax.set_label(r"$\lg \lambda_{sp}$")
+#     ax0.plot(curv_dat[:,1],curv_dat[:,2],'k')
+#     ax0.set_xlabel(r"$\lg \|AX-B\|_2$")
+#     ax0.set_ylabel(r"$\lg h_{sp}(X)$")
+#     ax2 = fig.add_subplot(2,2,2)
+#     ax2.plot(curv_dat[:,0],curv_dat[:,3])
+#     ax2.set_ylabel(r"|Tangent Vec|")
+#     ax3 = fig.add_subplot(2,2,4)
+#     ax3.plot(curv_dat[:,0],curv_dat[:,4])
+#     ax3.set_xlabel(r"$\lg \lambda_{sp}$")
+#     ax3.set_ylabel(r"Curvature")
+#     idM = np.argmax(curv_dat[:,-1])
+#     ax0.plot(curv_dat[idM,1],curv_dat[idM,2], "r+")
+#     ax3.plot(curv_dat[idM,0],curv_dat[idM,4], "r+")
+#     fig.tight_layout()
+#     return fig, idM
 
 def poisson_nll(pred, data):
     assert pred.shape == data.shape

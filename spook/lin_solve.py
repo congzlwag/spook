@@ -76,6 +76,9 @@ class SpookLinSolve(SpookBase):
             self.__setupProbFlat()
 
     def solve(self, lsparse=None, lsmooth=None):
+        """
+        Solve the linear system, since there is only a Tikhonov regularization but no constraint.
+        """
         self._updateHyperParams(lsparse, lsmooth)
         if self.verbose:
             print("Solving Lin. Eq.")

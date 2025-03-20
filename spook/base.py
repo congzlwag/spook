@@ -1,6 +1,3 @@
-"""
-@author: congzlwag
-"""
 import numpy as np
 import scipy.sparse as sps
 from scipy.sparse.linalg import spsolve
@@ -140,6 +137,9 @@ class SpookBase:
         return self._Bcontracted.shape[-1]
 
     def Asm(self):
+        """
+        Build the smoothness operator for the dimension of A
+        """
         temp = self.lsmooth[0] * self._Asm
         if hasattr(self, "_Tsm"):
             temp += self.lsmooth[2] * self._Tsm
@@ -230,6 +230,9 @@ class SpookBase:
 
     @property
     def AGscale(self):
+        """
+        Product s_A * s_G, where s_A and s_G are the normalization factors of A and G.
+        """
         return self.__Ascale*self.__Gscale
 
     @property
@@ -290,6 +293,9 @@ class SpookBase:
             del self._AGtAG # Clear cache
 
     def save_prectr(self, inplace=False):
+        """
+        Export the pre-contracted arrays into a dictionary
+        """
         A2, G2, AG = self.__Ascale**2, self.__Gscale**2, self.AGscale
         if inplace:
             ret = {"AtA_nmlz":self._AtA, "GtG_nmlz":self._GtG, "Bcontracted_nmlz":self._Bcontracted,
@@ -326,8 +332,10 @@ class SpookBase:
         The smoothness is defined as sqrt(X.T @ LL @ X), where LL is the smoothness operator
             by default LL is the square of finite difference Laplacian operator.
             No lsmooth* is applied.
-        :param X: the solution to evaluate
-        :param dim: 'w' or 'b' or 't'
+        Parameters
+        ----------
+        X: the solution to evaluate
+        dim: 'w' or 'b' or 't'
             'w': along the photon frequency axis
             'b': along the interested property axis
             't': along the delay axis (if applicable)

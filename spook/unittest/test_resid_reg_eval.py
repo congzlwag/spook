@@ -23,7 +23,6 @@ def check_rl2_eval(Solver, ata, atb, btb):
     spk = Solver(atb[:,None], ata, mode='contracted',
                  lsparse=1e-20, lsmooth=(1e-20, 1e-20))
     Xo = spk.getXopt()
-    # print(abs(Xo-x_groundtruth).mean())
     resid_gt = A @ np.squeeze(Xo) - b
     resid_gt = (np.sum(resid_gt**2)/Ns)**0.5
     print(f"gt-rmse = {resid_gt:.3g}",end='...')

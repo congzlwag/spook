@@ -42,7 +42,7 @@ Examples can be found in [unit tests](#UnitTests)
 | False         | L2 squared          | Quadratic  | `SpookLinSolve`     | This solver is so far the work-horse for SpookVMI            |
 | False         | L1                  | Quadratic  | `SpookL1` |                                                              |
 
-A family tree of solvers is in `figs/famtree.svg`.
+A family tree of solvers is in `docs/figs/famtree.svg`.
 
 ### Quadratic Programming
 
@@ -62,8 +62,14 @@ Common regularizations are the following three types, all of which optional, dep
 Sparsity and Smoothness are enforced through penalties in the total obejctive function, and the penalties are weighted by hyperparameters `lsparse` and `lsmooth`. `lsmooth` is a 2-tuple that weight roughness penalty along the two axes of X respectively. The hyperparameters can be passed in during instantiation and also updated afterwards. It is recommended to call method `getXopt` with the hyperparameter(s) to be updated, because it will update, solve, and return the optimal X in one step. Calling `solve` with  the hyperparameter(s) to be updated and then calling `getXopt()` without input is effectively the same, and the problem will be solved once as long as there is no update.
 
 ### Evaluating Terms of Objective Function
-See docstring of methods `residueL2`, `smoothness` and `sparsity` of the solver instance.
+| Term | Method | Notes |
+|------|--------|-------|
+| $\|(A \otimes G)X-B\|_2$ | `residueL2`| For full docstring, check `help(spk.residueL2)`, where `spk` is a solver instance. |
+| $\|L X\|_2$ | `smoothness` | By default, $L$ is a 2nd-order finite difference operator along dimension specified by input argument `dim`. For full docstring, check `help(spk.smoothness)`.  |
+| $\|X\|_1$ or $\|X\|_2$ | `sparsity` | Depends on solver class. |
 
+* Method `residueL2` is based on function `utils.calcL2fromContracted`. This function evaluates the residual term from the precontracted results. Also see `XValidation.calc_residual` defined in `xval.py`.
+* Function `utils.calcL2fromContracted` is also used in the cross-validation class `XValidation` to evaluate the residual on validation sets. See `xval.py` for more details.
 
 ## Normalization Convention
 
@@ -94,4 +100,9 @@ Please cite [Wang _et al_ 2023](https://iopscience.iop.org/article/10.1088/1367-
 pip installation should manage the dependencies automatically. If not, check `requirements.txt` .
 
 ## Acknowledgement
+
 This work was supported by the U.S. Department of Energy (DOE), Office of Science, Office of Basic Energy Sciences (BES), Chemical Sciences, Geosciences, and Biosciences Division (CSGB).
+
+## Documentation
+
+To view the documentation, open `docs/_build/html/index.html` in your browser after cloning this repository.
