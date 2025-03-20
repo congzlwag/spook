@@ -1,11 +1,21 @@
 import numpy as np
+
 from .utils import calcL2fromContracted
+
 
 class XValidation:
     """
     Class for cross-validation of a solver.
     """
     def __init__(self, solver_class, datasets, **kwargs):
+        """
+        Parameters
+        ----------
+        solver_class: a spook solver class
+        datasets: list of tuples, each tuple is (train, val),
+                  where train and val are dictionaries containing the precontracted data
+        kwargs: keyword arguments to pass to the solver class
+        """
         self._spksolvers = []
         for train, val in datasets:
             spk = solver_class(train["AtB"], train["AtA"], "contracted", **kwargs)

@@ -1,10 +1,11 @@
 import sys
 
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.model_selection import KFold
 
 sys.path.append("../../")
-from spook import SpookL1, SpookL2, SpookPosL1, XValidation
+from spook import SpookL2, XValidation
 
 """
 Test the class that does cross-validation
@@ -51,12 +52,16 @@ hyperparams = 10**(np.random.rand(100, 2) * 8 - 9)
 train_resid = spk_xval.calc_residual(hyperparams, dset='train', avg=True)
 val_resid = spk_xval.calc_residual(hyperparams, dset='val', avg=True)
 
-from matplotlib import pyplot as plt
-plt.scatter(hyperparams[:,0], hyperparams[:,1],
-             c=val_resid, cmap='jet')
-plt.xscale('log')
-plt.xlabel("lsparse")
-plt.yscale('log')
-plt.ylabel("lsmooth")
-plt.colorbar()
+# print(np.allclose(np.array(train_resid), np.array(val_resid)))
+
+fig, axs = plt.subplots(1, 2)
+for ax, resid, title in zip(axs, [train_resid, val_resid], ["Train Residuals", "Validation Residuals"]):
+    ax.scatter(hyperparams[:,0], hyperparams[:,1], c=resid, cmap='jet')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel("lsparse")
+    ax.set_ylabel("lsmooth")
+    ax.set_title(title)
+    fig.colorbar(ax.collections[0], ax=ax)
+plt.tight_layout()
 plt.show()
