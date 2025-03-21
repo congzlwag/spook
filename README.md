@@ -105,4 +105,4 @@ This work was supported by the U.S. Department of Energy (DOE), Office of Scienc
 
 ## Documentation
 
-[Full documentation](https://github.com/congzlwag/spook/docs)
+Full documentation is [here](https://congzlwag.github.io/spook/). Alternatively, clone this repo, switch to gh-pages, and open docs/index.html in a browser.
