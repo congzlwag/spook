@@ -105,4 +105,4 @@ This work was supported by the U.S. Department of Energy (DOE), Office of Scienc
 
 ## Documentation
 
-To view the documentation, open `docs/_build/html/index.html` in your browser after cloning this repository.
+[Full documentation](https://github.com/congzlwag/spook/docs)
