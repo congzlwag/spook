@@ -38,13 +38,13 @@ class SpookLinSolve(SpookBase):
 
     def __setupProbVec(self):
         # Set up the problem into Nb sub-problems
-        if self.verbose: print("Set up a vectorized problem")
+        if self.verbose:
+            print("Set up a vectorized problem")
         assert self._GtG is None and self.lsmooth[1]==0
         self.qhalf = self._Bcontracted
         self.P = self.lsparse * sps.eye(self.Na) + self.Asm()
         self.P += self._AtA
 
-    # @profile
     def __setupProbFlat(self):
         # Set up a single, flattened problem
         self.qhalf = self._Bcontracted.ravel()
@@ -65,7 +65,6 @@ class SpookLinSolve(SpookBase):
         dlsp = lsparse - self.lsparse
         for i in range(self.P.shape[0]):
             self.P[i,i] += dlsp
-        # self.P += (lsparse - self.lsparse) * sps.eye(self.P.shape[0])
         self.lsparse = lsparse
 
     def update_lsmooth(self, lsmooth):
@@ -77,8 +76,12 @@ class SpookLinSolve(SpookBase):
             self.__setupProbFlat()
 
     def solve(self, lsparse=None, lsmooth=None):
+        """
+        Solve the linear system, since there is only a Tikhonov regularization but no constraint.
+        """
         self._updateHyperParams(lsparse, lsmooth)
-        if self.verbose: print("Solving Lin. Eq.")
+        if self.verbose:
+            print("Solving Lin. Eq.")
         if isinstance(self.P, np.ndarray):
             self.res = np.linalg.solve(self.P, self.qhalf)
         else:

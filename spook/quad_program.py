@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import scipy.sparse as sps
 import numpy as np
 import osqp
+import scipy.sparse as sps
+
 from .base import SpookBase
 from .utils import iso_struct
+
 
 class SpookQPBase(SpookBase):
     verbose = False
     def __init__(self, B, A, mode='raw', G=None, lsparse=1, lsmooth=(0.1,0.1),
-        **kwargs):
+        osqp_settings={}, **kwargs):
         SpookBase.__init__(self, B, A, mode=mode, G=G,
                 lsparse=lsparse, lsmooth=lsmooth, **kwargs)
         Ng = self.Ng
+        self._osqp_settings = osqp_settings
+        if 'verbose' not in osqp_settings:
+            self._osqp_settings['verbose'] = self.verbose
         if not (G is None and self.lsmooth[1]==0 and Ng>1):
             self._Pcore = sps.triu(self.AGtAG, 0, "csc")
             # self._qhalf = - self._Bcontracted.ravel()
@@ -48,6 +53,9 @@ class SpookQPBase(SpookBase):
         return temp.tocsc()
 
     def solve(self, lsparse=None, lsmooth=None):
+        """
+        Solve the quadratic program
+        """
         self._updateHyperParams(lsparse, lsmooth)
         if self.verbose: print("Solving Quad. Prog.")
         self.res = []
@@ -126,10 +134,10 @@ class SpookPos(SpookQPBase):
         if hasattr(self, "_prob"):
             del self._prob
         dimNaNg = self._Pcore.shape[0]
-        I = sps.eye(dimNaNg, format='csc')
+        eye = sps.eye(dimNaNg, format='csc')
         lb, ub = (np.zeros(dimNaNg), None)
         prob = osqp.OSQP()
-        return prob, I, lb, ub
+        return prob, eye, lb, ub
 
     # def solve(self, lsparse=None, lsmooth=None):
     #     """
@@ -156,9 +164,10 @@ class SpookPosL1(SpookPos):
         regardless of whether self._P is dense or sparse
         """
         self._spfunc = lambda X: abs(X).sum()
-        prob, I, lb, ub = SpookPos.initProb(self)
+        prob, eye, lb, ub = SpookPos.initProb(self)
         P = self._P # calculated in SpookPos.__init__
-        prob.setup(P, self.qhalf(col) + 0.5*self.lsparse, I, lb, ub, verbose=False)
+        prob.setup(P, self.qhalf(col) + 0.5*self.lsparse,
+                   eye, lb, ub, **(self._osqp_settings))
         # the factor of 0.5 comes from the convention of OSQP
         return prob
 
@@ -176,13 +185,16 @@ class SpookPosL1(SpookPos):
             for col, prob in enumerate(self._probs):
                 qhalf = - self._Bcontracted[...,col].ravel()
                 prob.update(q = qhalf + 0.5*self.lsparse)
-        if self.verbose: print("Sparsity hyperparam updated.")
+        if self.verbose:
+            print("Sparsity hyperparam updated.")
 
-    # def sparsity(self, X=None):
-    #     if X is None:
-    #         X = self.res
-    #     X = X.ravel()
-    #     return abs(X).sum()
+    def sparsity(self, X=None):
+        """
+        L1 norm of X. No lsparse* applied.
+        """
+        if X is None:
+            X = self.getXopt()
+        return abs(X).sum()
 
 class SpookPosL2(SpookPos):
     """
@@ -202,8 +214,9 @@ class SpookPosL2(SpookPos):
         regardless of whether self._P is dense or sparse
         """
         self._spfunc = lambda X: (X**2).sum()
-        prob, I, lb, ub = SpookPos.initProb(self)
-        prob.setup(self._P, self.qhalf(col), I, lb, ub, verbose=False)
+        prob, eye, lb, ub = SpookPos.initProb(self)
+        prob.setup(self._P, self.qhalf(col),
+                   eye, lb, ub, **(self._osqp_settings))
         # the factor of 0.5 comes from the convention of OSQP
         return prob
 
@@ -216,7 +229,6 @@ class SpookPosL2(SpookPos):
         Pnew = self._P + (sps.eye(self._Pcore.shape[0])*(lsparse-self.lsparse)).tocsc()
         self.lsparse = lsparse
         self._update_Pmat(Pnew)
-
 
 class SpookL1(SpookQPBase):
     """
@@ -240,17 +252,18 @@ class SpookL1(SpookQPBase):
         if hasattr(self, "_prob"):
             del self._prob
         Nag = self._Pcore.shape[0]
-        I = sps.eye(Nag, format='csc')
+        eye = sps.eye(Nag, format='csc')
         lb, ub = (np.zeros(2*Nag), None)
-        I = sps.bmat([[I,I],[-I,I]],'csc') # This captures the absolute value function
+        eye = sps.bmat([[eye,eye],[-eye,eye]],'csc') # This captures the absolute value function
         q = np.concatenate((self.qhalf(col), 0.5*self.lsparse * np.ones(Nag)))
         prob = osqp.OSQP()
-        prob.setup(self._P, q, I, lb, ub, verbose=False)
+        prob.setup(self._P, q, eye, lb, ub, **(self._osqp_settings))
         return prob
 
     def solve(self, lsparse=None, lsmooth=None):
         if self.verbose: print("L1 sparsity reg. w/o nonnegative constraint")
         SpookQPBase.solve(self, lsparse, lsmooth)
+        SpookQPBase.solve(self) # for better convergence
         self.res = self.res[:self._Pcore.shape[0]] # the rest half are auxilary variables
 
     def update_lsparse(self, lsparse):
@@ -265,4 +278,13 @@ class SpookL1(SpookQPBase):
                 qhalf = - self._Bcontracted[...,col].ravel()
                 q = np.concatenate((qhalf, 0.5*self.lsparse * np.ones_like(qhalf)))
                 prob.update(q = q)
-        if self.verbose: print("Sparsity hyperparam updated.")
+        if self.verbose:
+            print("Sparsity hyperparam updated.")
+
+    def sparsity(self, X=None):
+        """
+        L1 norm of X. No lsparse* applied.
+        """
+        if X is None:
+            X = self.res / self.AGscale
+        return abs(X).sum()

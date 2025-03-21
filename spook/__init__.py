@@ -1,7 +1,9 @@
+from . import utils
 from .base import SpookBase
 from .lin_solve import SpookLinSolve
-from .quad_program import SpookPosL1,SpookPosL2,SpookL1
-from . import utils
+from .quad_program import SpookL1, SpookPosL1, SpookPosL2
+from .xval import XValidation
+
 # from . __version__ import __version__
 # from spook.vmi_special import PhotonFreqResVMI
 
