@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="175.94984mm"
+   height="93.883415mm"
+   viewBox="0 0 175.94984 93.883415"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   sodipodi:docname="famtree.svg"
+   inkscape:export-filename="famtree.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.74118967"
+     inkscape:cx="250.94791"
+     inkscape:cy="219.24213"
+     inkscape:window-width="1440"
+     inkscape:window-height="810"
+     inkscape:window-x="0"
+     inkscape:window-y="136"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-18.740983,-35.340142)">
+    <ellipse
+       style="fill:#008080;stroke-width:0.264583"
+       id="path1"
+       cx="115.1232"
+       cy="44.978363"
+       rx="13.207932"
+       ry="9.6382208" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="103.52164"
+       y="46.763218"
+       id="text1"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="103.52164"
+         y="46.763218">SpookBase</tspan></text>
+    <ellipse
+       style="fill:#000080;stroke-width:0.264583"
+       id="ellipse1"
+       cx="161.17247"
+       cy="71.751205"
+       rx="19.633413"
+       ry="12.49399" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="145.28726"
+       y="70.68029"
+       id="text2"><tspan
+         sodipodi:role="line"
+         id="tspan2"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="145.28726"
+         y="70.68029">SpookLinSolve</tspan><tspan
+         sodipodi:role="line"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="145.28726"
+         y="75.971954"
+         id="tspan3">aka SpookL2</tspan></text>
+    <ellipse
+       style="fill:#008080;stroke-width:0.264583"
+       id="ellipse3"
+       cx="79.426079"
+       cy="71.751205"
+       rx="19.633413"
+       ry="12.49399" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="64.611778"
+       y="72.465149"
+       id="text5"><tspan
+         sodipodi:role="line"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="64.611778"
+         y="72.465149"
+         id="tspan5">SpookQPBase</tspan></text>
+    <ellipse
+       style="fill:#000080;stroke-width:0.264583"
+       id="ellipse6"
+       cx="109.05469"
+       cy="97.810097"
+       rx="10.709134"
+       ry="7.8533649" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="99.594955"
+       y="99.594955"
+       id="text6"><tspan
+         sodipodi:role="line"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="99.594955"
+         y="99.594955"
+         id="tspan6">SpookL1</tspan></text>
+    <ellipse
+       style="fill:#008080;stroke-width:0.264583"
+       id="ellipse7"
+       cx="49.797478"
+       cy="97.810081"
+       rx="13.207932"
+       ry="9.6382208" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="39.623802"
+       y="99.594948"
+       id="text7"><tspan
+         sodipodi:role="line"
+         id="tspan7"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="39.623802"
+         y="99.594948">SpookPos</tspan></text>
+    <ellipse
+       style="fill:#000080;stroke-width:0.264583"
+       id="ellipse9"
+       cx="70.858772"
+       cy="121.37019"
+       rx="13.921874"
+       ry="7.8533649" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="57.82933"
+       y="122.79808"
+       id="text9"><tspan
+         sodipodi:role="line"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="57.82933"
+         y="122.79808"
+         id="tspan9">SpookPosL2</tspan></text>
+    <ellipse
+       style="fill:#000080;stroke-width:0.264583"
+       id="ellipse10"
+       cx="32.662857"
+       cy="121.37019"
+       rx="13.921874"
+       ry="7.8533649" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke-width:0.264583"
+       x="19.633417"
+       y="122.79808"
+       id="text10"><tspan
+         sodipodi:role="line"
+         style="font-size:4.23333px;fill:#f9f9f9;stroke-width:0.264583"
+         x="19.633417"
+         y="122.79808"
+         id="tspan10">SpookPosL1</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583"
+       d="m 33.912259,112.44591 15.70673,-4.99759 18.919471,5.71153"
+       id="path10" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583"
+       d="M 51.046874,87.814903 79.961538,82.817307 108.8762,90.313702"
+       id="path11" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583"
+       d="m 79.247594,58.543269 36.411056,-4.640625 45.69231,5.711539"
+       id="path12" />
+    <circle
+       style="fill:#008080;stroke:none;stroke-width:0.264583"
+       id="path13"
+       cx="165.45613"
+       cy="105.48498"
+       r="2.6772835" />
+    <circle
+       style="fill:#000080;stroke:none;stroke-width:0.264583"
+       id="circle13"
+       cx="165.45613"
+       cy="117.97897"
+       r="2.6772835" />
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#008080;stroke:none;stroke-width:0.264583"
+       x="170.6322"
+       y="103.52164"
+       id="text13"><tspan
+         sodipodi:role="line"
+         id="tspan13"
+         style="stroke-width:0.264583;fill:#008080"
+         x="170.6322"
+         y="103.52164">Supporting</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583;fill:#008080"
+         x="170.6322"
+         y="108.81331"
+         id="tspan15">Classes</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23333px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000080;stroke:none;stroke-width:0.264583"
+       x="170.27522"
+       y="117.44352"
+       id="text14"><tspan
+         sodipodi:role="line"
+         id="tspan14"
+         style="stroke-width:0.264583"
+         x="170.27522"
+         y="117.44352">User-facing</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="170.27522"
+         y="122.73518"
+         id="tspan16">Classes</tspan></text>
+  </g>
+</svg>

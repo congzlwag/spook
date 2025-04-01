@@ -309,7 +309,7 @@ class SpookBase:
         ret['GtG'] = self._GtG * G2 if self._GtG is not None else None
         return ret
 
-    def _parse_lsmooth(self, lsmooth: [float|tuple|None]):
+    def _parse_lsmooth(self, lsmooth):
         if lsmooth is None:
             return (1e-16, 1e-16)
         if isinstance(lsmooth, (int, float)):
